@@ -85,7 +85,7 @@ export const LoginPage = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-slate-600">
                 Don't have an account?{' '}
-                <Link to="/register" className="text-blue-600 hover:underline" data-testid="register-link">
+                <Link to="/register" className="text-magnova-orange hover:underline font-medium" data-testid="register-link">
                   Register here
                 </Link>
               </p>
