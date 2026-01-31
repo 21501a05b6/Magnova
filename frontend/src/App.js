@@ -9,7 +9,11 @@ import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage';
 import { ProcurementPage } from './pages/ProcurementPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { InventoryPage } from './pages/InventoryPage';
+import { LogisticsPage } from './pages/LogisticsPage';
+import { InvoicesPage } from './pages/InvoicesPage';
+import { SalesOrdersPage } from './pages/SalesOrdersPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { UsersPage } from './pages/UsersPage';
 import './App.css';
 
 const ProtectedRoute = ({ children }) => {
