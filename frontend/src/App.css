@@ -73,9 +73,9 @@
 }
 
 .status-pending {
-  background-color: #FFF7ED;
+  background-color: #FFF0E5;
   color: #C2410C;
-  border-color: #FED7AA;
+  border-color: #F58120;
 }
 
 .status-rejected {
