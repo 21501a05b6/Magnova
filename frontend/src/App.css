@@ -73,9 +73,9 @@
 }
 
 .status-pending {
-  background-color: #FEF3C7;
-  color: #B45309;
-  border-color: #FDE68A;
+  background-color: #FFF7ED;
+  color: #C2410C;
+  border-color: #FED7AA;
 }
 
 .status-rejected {
@@ -85,7 +85,7 @@
 }
 
 .status-created {
-  background-color: #F1F5F9;
-  color: #475569;
-  border-color: #CBD5E1;
+  background-color: #EFF6FF;
+  color: #1E40AF;
+  border-color: #BFDBFE;
 }
