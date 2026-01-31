@@ -46,10 +46,10 @@ export const LoginPage = () => {
       </div>
 
       <div className="flex-1 flex items-center justify-center p-8 bg-slate-50">
-        <Card className="w-full max-w-md shadow-sm">
+        <Card className="w-full max-w-md shadow-sm bg-white">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardTitle className="text-2xl font-bold text-slate-900">Sign In</CardTitle>
+            <CardDescription className="text-slate-600">Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
