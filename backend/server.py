@@ -64,15 +64,32 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: User
 
+class POLineItem(BaseModel):
+    sl_no: int
+    vendor: str
+    location: str
+    brand: str
+    model: str
+    storage: Optional[str] = None
+    colour: Optional[str] = None
+    imei: Optional[str] = None
+    qty: int = 1
+    rate: float
+    po_value: float
+
 class PurchaseOrder(BaseModel):
     model_config = ConfigDict(extra="ignore")
     po_id: str
     po_number: str
+    po_date: datetime
+    purchase_office: str
     created_by: str
     created_by_name: str
     organization: str
     status: str
     total_quantity: int
+    total_value: float
+    items: List[POLineItem] = []
     notes: Optional[str] = None
     approval_status: str
     approved_by: Optional[str] = None
@@ -82,7 +99,9 @@ class PurchaseOrder(BaseModel):
     updated_at: datetime
 
 class POCreate(BaseModel):
-    total_quantity: int
+    po_date: datetime
+    purchase_office: str
+    items: List[POLineItem]
     notes: Optional[str] = None
 
 class POApproval(BaseModel):
@@ -339,14 +358,25 @@ async def create_purchase_order(po_data: POCreate, current_user: User = Depends(
     po_count = await db.purchase_orders.count_documents({}) + 1
     po_number = f"PO-MAG-{po_count:05d}"
     
+    # Calculate totals from items
+    total_quantity = sum(item.qty for item in po_data.items)
+    total_value = sum(item.po_value for item in po_data.items)
+    
+    # Convert items to dict for storage
+    items_list = [item.model_dump() for item in po_data.items]
+    
     po_doc = {
         "po_id": str(uuid4()),
         "po_number": po_number,
+        "po_date": po_data.po_date.isoformat() if isinstance(po_data.po_date, datetime) else po_data.po_date,
+        "purchase_office": po_data.purchase_office,
         "created_by": current_user.user_id,
         "created_by_name": current_user.name,
         "organization": current_user.organization,
         "status": "Created",
-        "total_quantity": po_data.total_quantity,
+        "total_quantity": total_quantity,
+        "total_value": total_value,
+        "items": items_list,
         "notes": po_data.notes,
         "approval_status": "Pending",
         "approved_by": None,
@@ -357,7 +387,7 @@ async def create_purchase_order(po_data: POCreate, current_user: User = Depends(
     }
     
     await db.purchase_orders.insert_one(po_doc)
-    await create_audit_log("CREATE", "PurchaseOrder", po_number, current_user, {"total_quantity": po_data.total_quantity})
+    await create_audit_log("CREATE", "PurchaseOrder", po_number, current_user, {"total_quantity": total_quantity, "total_value": total_value})
     
     return PurchaseOrder(**{k: v for k, v in po_doc.items() if k != "_id"})
 
@@ -371,6 +401,17 @@ async def get_purchase_orders(current_user: User = Depends(get_current_user)):
             po['updated_at'] = datetime.fromisoformat(po['updated_at'])
         if po.get('approved_at') and isinstance(po['approved_at'], str):
             po['approved_at'] = datetime.fromisoformat(po['approved_at'])
+        if po.get('po_date') and isinstance(po['po_date'], str):
+            po['po_date'] = datetime.fromisoformat(po['po_date'])
+        # Ensure backward compatibility for old POs without new fields
+        if 'po_date' not in po:
+            po['po_date'] = po.get('created_at')
+        if 'purchase_office' not in po:
+            po['purchase_office'] = 'Magnova Head Office'
+        if 'total_value' not in po:
+            po['total_value'] = 0.0
+        if 'items' not in po:
+            po['items'] = []
     return [PurchaseOrder(**po) for po in pos]
 
 @api_router.get("/purchase-orders/{po_number}", response_model=PurchaseOrder)
@@ -384,6 +425,17 @@ async def get_purchase_order(po_number: str, current_user: User = Depends(get_cu
         po['updated_at'] = datetime.fromisoformat(po['updated_at'])
     if po.get('approved_at') and isinstance(po['approved_at'], str):
         po['approved_at'] = datetime.fromisoformat(po['approved_at'])
+    if po.get('po_date') and isinstance(po['po_date'], str):
+        po['po_date'] = datetime.fromisoformat(po['po_date'])
+    # Ensure backward compatibility
+    if 'po_date' not in po:
+        po['po_date'] = po.get('created_at')
+    if 'purchase_office' not in po:
+        po['purchase_office'] = 'Magnova Head Office'
+    if 'total_value' not in po:
+        po['total_value'] = 0.0
+    if 'items' not in po:
+        po['items'] = []
     return PurchaseOrder(**po)
 
 @api_router.post("/purchase-orders/{po_number}/approve")
