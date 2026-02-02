@@ -194,9 +194,38 @@ export const PurchaseOrdersPage = () => {
               <DialogContent className="bg-white max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-magnova-orange">Create Purchase Order</DialogTitle>
-                  <DialogDescription className="text-slate-600">Add line items with complete device details</DialogDescription>
+                  <DialogDescription className="text-slate-600">Nova to Magnova PO - Add line items with complete device details</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreate} className="space-y-6" data-testid="create-po-form">
+                  
+                  {/* PO Header Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="space-y-2">
+                      <Label htmlFor="po_date" className="text-slate-700 font-medium">P.O Date *</Label>
+                      <Input
+                        id="po_date"
+                        type="date"
+                        value={poDate}
+                        onChange={(e) => setPoDate(e.target.value)}
+                        className="bg-white text-slate-900"
+                        required
+                        data-testid="po-date-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="purchase_office" className="text-slate-700 font-medium">Purchase Office *</Label>
+                      <Select value={purchaseOffice} onValueChange={setPurchaseOffice}>
+                        <SelectTrigger className="bg-white text-slate-900" data-testid="purchase-office-select">
+                          <SelectValue placeholder="Select office" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white">
+                          <SelectItem value="Magnova Head Office">Magnova Head Office</SelectItem>
+                          <SelectItem value="Magnova Branch Office">Magnova Branch Office</SelectItem>
+                          <SelectItem value="Nova Enterprises">Nova Enterprises</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   
                   {/* Line Items Table */}
                   <div className="border border-slate-200 rounded-lg overflow-hidden">
