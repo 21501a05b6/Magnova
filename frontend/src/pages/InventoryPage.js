@@ -118,7 +118,7 @@ export const InventoryPage = () => {
       'Inward Nova': 'bg-purple-50 text-purple-700 border-purple-200',
       'Inward Magnova': 'bg-indigo-50 text-indigo-700 border-indigo-200',
       'Outward Nova': 'bg-orange-50 text-orange-700 border-orange-200',
-      'Outward Magnova': 'bg-amber-50 text-amber-700 border-amber-200',
+      'Outward Magnova': 'bg-orange-50 text-orange-700 border-orange-200',
       Available: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       Reserved: 'bg-orange-50 text-orange-700 border-orange-300',
       Dispatched: 'bg-cyan-50 text-cyan-700 border-cyan-200',
