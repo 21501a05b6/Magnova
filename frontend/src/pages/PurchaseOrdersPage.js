@@ -399,16 +399,22 @@ export const PurchaseOrdersPage = () => {
                     PO Number
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    PO Date
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Purchase Office
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Created By
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Quantity
+                    Qty
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Total Value
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Created At
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Actions
@@ -418,13 +424,13 @@ export const PurchaseOrdersPage = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
                       Loading...
                     </td>
                   </tr>
                 ) : pos.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
                       No purchase orders found
                     </td>
                   </tr>
@@ -434,13 +440,24 @@ export const PurchaseOrdersPage = () => {
                       <td className="px-4 py-3 text-sm font-mono font-medium text-slate-900">
                         {po.po_number}
                       </td>
+                      <td className="px-4 py-3 text-sm text-slate-900">
+                        {po.po_date ? new Date(po.po_date).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-900">{po.purchase_office || '-'}</td>
                       <td className="px-4 py-3 text-sm text-slate-900">{po.created_by_name}</td>
                       <td className="px-4 py-3 text-sm text-slate-900">{po.total_quantity}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-slate-900">₹{(po.total_value || 0).toFixed(2)}</td>
                       <td className="px-4 py-3 text-sm">{getStatusBadge(po.approval_status)}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {new Date(po.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-3 text-sm space-x-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setViewDialog({ open: true, po })}
+                          className="text-magnova-blue hover:text-magnova-dark-blue"
+                          data-testid="view-po-button"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         {po.approval_status === 'Pending' && (user?.role === 'Approver' || user?.role === 'Admin') && (
                           <Button
                             size="sm"
