@@ -542,6 +542,9 @@ async def get_procurement_records(po_number: Optional[str] = None, current_user:
             rec['procurement_date'] = datetime.fromisoformat(rec['procurement_date'])
         if isinstance(rec.get('created_at'), str):
             rec['created_at'] = datetime.fromisoformat(rec['created_at'])
+        # Ensure backward compatibility for quantity field
+        if 'quantity' not in rec:
+            rec['quantity'] = 1
     return [ProcurementRecord(**rec) for rec in records]
 
 # Payment Endpoints
