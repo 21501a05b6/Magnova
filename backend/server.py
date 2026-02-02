@@ -702,7 +702,11 @@ async def get_payments(po_number: Optional[str] = None, payment_type: Optional[s
     if po_number:
         query["po_number"] = po_number
     if payment_type:
-        query["payment_type"] = payment_type
+        if payment_type == "internal":
+            # Include legacy payments without payment_type as internal
+            query["$or"] = [{"payment_type": "internal"}, {"payment_type": {"$exists": False}}]
+        else:
+            query["payment_type"] = payment_type
     
     payments = await db.payments.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     for payment in payments:
@@ -710,8 +714,8 @@ async def get_payments(po_number: Optional[str] = None, payment_type: Optional[s
             payment['payment_date'] = datetime.fromisoformat(payment['payment_date'])
         if isinstance(payment.get('created_at'), str):
             payment['created_at'] = datetime.fromisoformat(payment['created_at'])
-        # Ensure backward compatibility
-        if 'payment_type' not in payment:
+        # Set payment_type to 'internal' for legacy payments
+        if 'payment_type' not in payment or payment['payment_type'] is None:
             payment['payment_type'] = 'internal'
         for field in ['payee_account', 'payee_bank', 'account_number', 'ifsc_code', 'location', 'utr_number', 'payee_type']:
             if field not in payment:
