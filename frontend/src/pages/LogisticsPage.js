@@ -5,12 +5,19 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Package } from 'lucide-react';
+import { Plus, Package, Edit } from 'lucide-react';
 
 export const LogisticsPage = () => {
   const [shipments, setShipments] = useState([]);
+  const [pos, setPOs] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [selectedShipment, setSelectedShipment] = useState(null);
+  const [selectedPO, setSelectedPO] = useState(null);
+  const [poItems, setPOItems] = useState([]);
+  const [availableQty, setAvailableQty] = useState({});
   const [formData, setFormData] = useState({
     po_number: '',
     transporter_name: '',
@@ -19,11 +26,16 @@ export const LogisticsPage = () => {
     to_location: '',
     pickup_date: new Date().toISOString().split('T')[0],
     expected_delivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    imei_list: '',
+    pickup_quantity: '',
+    brand: '',
+    model: '',
+    total_quantity: '',
   });
+  const [newStatus, setNewStatus] = useState('');
 
   useEffect(() => {
     fetchShipments();
+    fetchPOs();
   }, []);
 
   const fetchShipments = async () => {
@@ -35,42 +47,159 @@ export const LogisticsPage = () => {
     }
   };
 
+  const fetchPOs = async () => {
+    try {
+      const response = await api.get('/purchase-orders');
+      const approved = response.data.filter((po) => po.approval_status === 'Approved');
+      setPOs(approved);
+    } catch (error) {
+      console.error('Error fetching POs:', error);
+    }
+  };
+
+  // Calculate shipped quantity for a PO
+  const getShippedQuantity = (poNumber) => {
+    return shipments
+      .filter(s => s.po_number === poNumber)
+      .reduce((sum, s) => sum + (s.pickup_quantity || s.imei_list?.length || 0), 0);
+  };
+
+  // Auto-populate when PO is selected
+  const handlePOSelect = (poNumber) => {
+    const po = pos.find(p => p.po_number === poNumber);
+    setSelectedPO(po);
+    
+    if (po && po.items && po.items.length > 0) {
+      setPOItems(po.items);
+      
+      // Get unique locations from PO items
+      const locations = [...new Set(po.items.map(item => item.location).filter(Boolean))];
+      
+      // Calculate total and available quantities
+      const totalQty = po.total_quantity || po.items.reduce((sum, item) => sum + (item.qty || 0), 0);
+      const shippedQty = getShippedQuantity(poNumber);
+      const available = totalQty - shippedQty;
+      
+      // Get first item's brand and model
+      const firstItem = po.items[0];
+      
+      setFormData(prev => ({
+        ...prev,
+        po_number: poNumber,
+        from_location: locations[0] || '',
+        brand: firstItem?.brand || '',
+        model: firstItem?.model || '',
+        total_quantity: totalQty.toString(),
+      }));
+      
+      setAvailableQty({
+        total: totalQty,
+        shipped: shippedQty,
+        available: available
+      });
+    } else {
+      setPOItems([]);
+      setAvailableQty({});
+    }
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const imeiArray = formData.imei_list.split(',').map(i => i.trim()).filter(i => i);
+      // Validate pickup quantity
+      const pickupQty = parseInt(formData.pickup_quantity) || 0;
+      if (pickupQty > availableQty.available) {
+        toast.error(`Cannot ship more than available quantity (${availableQty.available})`);
+        return;
+      }
+
       await api.post('/logistics/shipments', {
-        ...formData,
-        imei_list: imeiArray,
+        po_number: formData.po_number,
+        transporter_name: formData.transporter_name,
+        vehicle_number: formData.vehicle_number,
+        from_location: formData.from_location,
+        to_location: formData.to_location,
         pickup_date: new Date(formData.pickup_date).toISOString(),
         expected_delivery: new Date(formData.expected_delivery).toISOString(),
+        imei_list: [], // Will be populated later
+        pickup_quantity: pickupQty,
+        brand: formData.brand,
+        model: formData.model,
       });
       toast.success('Shipment created successfully');
       setDialogOpen(false);
-      setFormData({
-        po_number: '',
-        transporter_name: '',
-        vehicle_number: '',
-        from_location: '',
-        to_location: '',
-        pickup_date: new Date().toISOString().split('T')[0],
-        expected_delivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        imei_list: '',
-      });
+      resetForm();
       fetchShipments();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create shipment');
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      po_number: '',
+      transporter_name: '',
+      vehicle_number: '',
+      from_location: '',
+      to_location: '',
+      pickup_date: new Date().toISOString().split('T')[0],
+      expected_delivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      pickup_quantity: '',
+      brand: '',
+      model: '',
+      total_quantity: '',
+    });
+    setSelectedPO(null);
+    setPOItems([]);
+    setAvailableQty({});
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!selectedShipment || !newStatus) return;
+    try {
+      await api.patch(`/logistics/shipments/${selectedShipment.shipment_id}/status`, {
+        status: newStatus
+      });
+      toast.success('Status updated successfully');
+      setStatusDialogOpen(false);
+      setSelectedShipment(null);
+      setNewStatus('');
+      fetchShipments();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update status');
+    }
+  };
+
+  const openStatusDialog = (shipment) => {
+    setSelectedShipment(shipment);
+    setNewStatus(shipment.status);
+    setStatusDialogOpen(true);
+  };
+
   const getStatusColor = (status) => {
     const colors = {
+      'Pending': 'bg-orange-50 text-orange-700 border-orange-300',
       'In Transit': 'bg-blue-50 text-blue-700 border-blue-200',
       'Delivered': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      'Pending': 'bg-orange-50 text-orange-700 border-orange-300',
+      'Cancelled': 'bg-red-50 text-red-700 border-red-200',
     };
     return colors[status] || 'bg-slate-50 text-slate-700 border-slate-200';
   };
+
+  // Get unique locations from all PO items
+  const getAllLocations = () => {
+    const locations = new Set();
+    pos.forEach(po => {
+      if (po.items) {
+        po.items.forEach(item => {
+          if (item.location) locations.add(item.location);
+        });
+      }
+    });
+    return Array.from(locations);
+  };
+
+  const allLocations = getAllLocations();
 
   return (
     <Layout>
@@ -80,99 +209,188 @@ export const LogisticsPage = () => {
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Logistics & Shipments</h1>
             <p className="text-slate-600 mt-1">Track shipments and e-way bills</p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button data-testid="create-shipment-button">
+              <Button data-testid="create-shipment-button" className="bg-magnova-blue hover:bg-magnova-dark-blue">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Shipment
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl bg-white">
               <DialogHeader>
-                <DialogTitle>Create Shipment</DialogTitle>
-                <DialogDescription>Record new shipment details</DialogDescription>
+                <DialogTitle className="text-magnova-orange">Create Shipment</DialogTitle>
+                <DialogDescription className="text-slate-600">Record new shipment details - Select PO to auto-populate</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4" data-testid="shipment-form">
-                <div className="grid grid-cols-2 gap-4">
+                {/* PO Selection */}
+                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-slate-700 font-medium">PO Number *</Label>
+                      <Select value={formData.po_number} onValueChange={handlePOSelect} required>
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="Select PO" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {pos.map((po) => (
+                            <SelectItem key={po.po_number} value={po.po_number}>
+                              {po.po_number} - {po.purchase_office}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {availableQty.total !== undefined && (
+                      <div className="flex items-end">
+                        <div className="p-3 bg-white rounded-lg border border-slate-200 w-full">
+                          <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <span className="text-slate-500">Total:</span>
+                              <span className="ml-2 font-bold text-slate-900">{availableQty.total}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500">Shipped:</span>
+                              <span className="ml-2 font-bold text-orange-600">{availableQty.shipped}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500">Available:</span>
+                              <span className="ml-2 font-bold text-emerald-600">{availableQty.available}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Auto-populated Fields */}
+                <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label>PO Number</Label>
+                    <Label className="text-slate-700">Brand</Label>
                     <Input
-                      value={formData.po_number}
-                      onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
-                      required
-                      className="font-mono"
-                      data-testid="po-input"
+                      value={formData.brand}
+                      onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                      className="bg-slate-100 text-slate-900"
+                      readOnly
                     />
                   </div>
                   <div>
-                    <Label>Transporter Name</Label>
+                    <Label className="text-slate-700">Model</Label>
+                    <Input
+                      value={formData.model}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                      className="bg-slate-100 text-slate-900"
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-700">Pickup Quantity *</Label>
+                    <Input
+                      type="number"
+                      value={formData.pickup_quantity}
+                      onChange={(e) => setFormData({ ...formData, pickup_quantity: e.target.value })}
+                      required
+                      min="1"
+                      max={availableQty.available || 999}
+                      className="bg-white text-slate-900"
+                      placeholder={`Max: ${availableQty.available || 0}`}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-slate-700">Pickup Location *</Label>
+                    <Select value={formData.from_location} onValueChange={(value) => setFormData({ ...formData, from_location: value })} required>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select pickup location" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white">
+                        {allLocations.length > 0 ? (
+                          allLocations.map((loc) => (
+                            <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                          ))
+                        ) : (
+                          <>
+                            <SelectItem value="Mumbai">Mumbai</SelectItem>
+                            <SelectItem value="Delhi">Delhi</SelectItem>
+                            <SelectItem value="Bangalore">Bangalore</SelectItem>
+                            <SelectItem value="Chennai">Chennai</SelectItem>
+                            <SelectItem value="Hyderabad">Hyderabad</SelectItem>
+                            <SelectItem value="Pune">Pune</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-slate-700">To Location *</Label>
+                    <Select value={formData.to_location} onValueChange={(value) => setFormData({ ...formData, to_location: value })} required>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select destination" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white">
+                        {allLocations.length > 0 ? (
+                          allLocations.map((loc) => (
+                            <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                          ))
+                        ) : (
+                          <>
+                            <SelectItem value="Mumbai">Mumbai</SelectItem>
+                            <SelectItem value="Delhi">Delhi</SelectItem>
+                            <SelectItem value="Bangalore">Bangalore</SelectItem>
+                            <SelectItem value="Chennai">Chennai</SelectItem>
+                            <SelectItem value="Hyderabad">Hyderabad</SelectItem>
+                            <SelectItem value="Pune">Pune</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-slate-700">Transporter Name *</Label>
                     <Input
                       value={formData.transporter_name}
                       onChange={(e) => setFormData({ ...formData, transporter_name: e.target.value })}
                       required
+                      className="bg-white text-slate-900"
                       data-testid="transporter-input"
                     />
                   </div>
                   <div>
-                    <Label>Vehicle Number</Label>
+                    <Label className="text-slate-700">Vehicle Number *</Label>
                     <Input
                       value={formData.vehicle_number}
                       onChange={(e) => setFormData({ ...formData, vehicle_number: e.target.value })}
                       required
+                      className="bg-white text-slate-900 font-mono"
                       data-testid="vehicle-input"
                     />
                   </div>
                   <div>
-                    <Label>From Location</Label>
-                    <Input
-                      value={formData.from_location}
-                      onChange={(e) => setFormData({ ...formData, from_location: e.target.value })}
-                      required
-                      data-testid="from-location-input"
-                    />
-                  </div>
-                  <div>
-                    <Label>To Location</Label>
-                    <Input
-                      value={formData.to_location}
-                      onChange={(e) => setFormData({ ...formData, to_location: e.target.value })}
-                      required
-                      data-testid="to-location-input"
-                    />
-                  </div>
-                  <div>
-                    <Label>Pickup Date</Label>
+                    <Label className="text-slate-700">Pickup Date *</Label>
                     <Input
                       type="date"
                       value={formData.pickup_date}
                       onChange={(e) => setFormData({ ...formData, pickup_date: e.target.value })}
                       required
+                      className="bg-white text-slate-900"
                       data-testid="pickup-date-input"
                     />
                   </div>
                   <div>
-                    <Label>Expected Delivery</Label>
+                    <Label className="text-slate-700">Expected Delivery *</Label>
                     <Input
                       type="date"
                       value={formData.expected_delivery}
                       onChange={(e) => setFormData({ ...formData, expected_delivery: e.target.value })}
                       required
+                      className="bg-white text-slate-900"
                       data-testid="delivery-date-input"
                     />
                   </div>
-                  <div className="col-span-2">
-                    <Label>IMEI List (comma-separated)</Label>
-                    <Input
-                      value={formData.imei_list}
-                      onChange={(e) => setFormData({ ...formData, imei_list: e.target.value })}
-                      placeholder="356789012345678, 356789012345679"
-                      required
-                      className="font-mono"
-                      data-testid="imei-list-input"
-                    />
-                  </div>
                 </div>
-                <Button type="submit" className="w-full" data-testid="submit-shipment">
+                <Button type="submit" className="w-full bg-magnova-blue hover:bg-magnova-dark-blue" data-testid="submit-shipment">
                   Create Shipment
                 </Button>
               </form>
@@ -184,36 +402,49 @@ export const LogisticsPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="shipments-table">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">PO Number</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Transporter</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vehicle</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Route</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Items</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pickup Date</th>
+                <tr className="bg-magnova-blue text-white">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">PO Number</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Brand/Model</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Transporter</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Vehicle</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Route</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Qty</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Pickup Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {shipments.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
                       <Package className="w-12 h-12 mx-auto mb-2 text-slate-300" />
                       No shipments found
                     </td>
                   </tr>
                 ) : (
                   shipments.map((shipment) => (
-                    <tr key={shipment.shipment_id} className="table-row border-b border-slate-100" data-testid="shipment-row">
-                      <td className="px-4 py-3 text-sm font-mono font-medium text-slate-900">{shipment.po_number}</td>
+                    <tr key={shipment.shipment_id} className="table-row border-b border-slate-100 hover:bg-slate-50" data-testid="shipment-row">
+                      <td className="px-4 py-3 text-sm font-mono font-medium text-magnova-blue">{shipment.po_number}</td>
+                      <td className="px-4 py-3 text-sm text-slate-900">{shipment.brand} {shipment.model}</td>
                       <td className="px-4 py-3 text-sm text-slate-900">{shipment.transporter_name}</td>
                       <td className="px-4 py-3 text-sm font-mono text-slate-600">{shipment.vehicle_number}</td>
                       <td className="px-4 py-3 text-sm text-slate-600">{shipment.from_location} → {shipment.to_location}</td>
+                      <td className="px-4 py-3 text-sm text-slate-900 font-medium">{shipment.pickup_quantity || shipment.imei_list?.length || 0}</td>
                       <td className="px-4 py-3 text-sm">
                         <span className={`status-badge ${getStatusColor(shipment.status)}`}>{shipment.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-900">{shipment.imei_list.length} items</td>
                       <td className="px-4 py-3 text-sm text-slate-600">{new Date(shipment.pickup_date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openStatusDialog(shipment)}
+                          className="text-magnova-blue hover:text-magnova-dark-blue"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -221,6 +452,37 @@ export const LogisticsPage = () => {
             </table>
           </div>
         </div>
+
+        {/* Status Update Dialog */}
+        <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+          <DialogContent className="bg-white max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-magnova-orange">Update Shipment Status</DialogTitle>
+              <DialogDescription className="text-slate-600">
+                PO: {selectedShipment?.po_number}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-slate-700">Status</Label>
+                <Select value={newStatus} onValueChange={setNewStatus}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="In Transit">In Transit</SelectItem>
+                    <SelectItem value="Delivered">Delivered</SelectItem>
+                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleStatusUpdate} className="w-full bg-magnova-blue hover:bg-magnova-dark-blue">
+                Update Status
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
