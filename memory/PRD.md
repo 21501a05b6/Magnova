@@ -28,71 +28,78 @@ The system must provide end-to-end visibility from Purchase Order to Sales, with
 - User profile display
 
 ### ✅ Purchase Order Management (Complete - Updated Feb 2, 2025)
-- **PO List Page**: Displays PO Number, PO Date, Purchase Office, Created By, Qty, Total Value, Status, Actions
-- **Create PO Dialog**: Full line item support with:
-  - P.O Date (date picker)
-  - Purchase Office (dropdown)
-  - Line Items: SL No, Vendor, Location, Brand, Model, Storage, Colour, IMEI, Qty, Rate, PO Value
-  - Auto-calculation of PO Value and Totals
-  - Add/Remove line item functionality
+- **PO List Page**: Displays all line item attributes (SL No, PO_ID, P.O Date, Purchase Office, Vendor, Location, Brand, Model, Storage, Colour, IMEI, Qty, Rate, PO Value, Status, Actions)
+- **Create PO Dialog**: Full line item support with all device details
 - **View PO Details**: Dialog showing header info and line items table
 - **PO Approval Workflow**: Review, Approve, Reject with reason
 
-### ✅ Basic Module Scaffolding (Complete)
-- Procurement page
-- Payments page
-- Inventory page
-- Logistics page
-- Invoices page
-- Sales Orders page
-- Reports page
-- Users page
+### ✅ Procurement Page (Complete - Updated Feb 2, 2025)
+- **PO Auto-Populate**: Selecting PO auto-populates vendor, location, brand, model, storage, colour, rate
+- **Line Item Selection**: Dropdown to select specific line item from PO
+- **IMEI Recording**: Record individual IMEI against PO line items
+
+### ✅ IMEI Inventory Page (Complete - Updated Feb 2, 2025)
+- **Scan IMEI Dialog** with fields:
+  - IMEI Number
+  - **Action** (Inward Nova, Inward Magnova, **Outward Nova**, **Outward Magnova**, Dispatch, Mark Available)
+  - **Customer Organization** dropdown (Nova/Magnova) - NEW
+  - **Location** dropdown (populated from PO locations) - NEW
+  - Organization
+- **Status Filter**: Includes all action statuses including Outward Nova/Magnova
+- **Search**: By IMEI or device model
+
+### ✅ Logistics & Shipments Page (Complete - Updated Feb 2, 2025)
+- **Create Shipment** with PO auto-populate:
+  - PO Number selection
+  - Auto-populated: Brand, Model
+  - **Quantity Tracking**: Shows Total, Shipped, Available quantities
+  - **Pickup Location** dropdown (from PO locations)
+  - To Location dropdown
+  - Transporter Name, Vehicle Number
+  - Pickup Date, Expected Delivery
+- **Status Update**: Edit button to update status (Pending, In Transit, Delivered, Cancelled)
+- **Table Columns**: PO Number, Brand/Model, Transporter, Vehicle, Route, Qty, Status, Pickup Date, Actions
 
 ### ✅ UI/UX & Branding (Complete)
 - Magnova Blue (#1e3a5f) & Orange (#f97316) color scheme
 - Professional sidebar navigation
 - Consistent styling across all components
 
-### ✅ Training Materials (Complete)
-- `/app/training_materials/TRAINING_GUIDE.md`
-- `/app/training_materials/VIDEO_SCRIPT.md`
-- `/app/training_materials/PRESENTATION_OUTLINE.md`
+---
+
+## CRM-Style Data Linking (Complete)
+All pages are now linked via PO Number:
+1. **Purchase Orders** → Source of truth for all data
+2. **Procurement** → Auto-populates from PO line items
+3. **Inventory** → Location dropdown populated from POs
+4. **Logistics** → Auto-populates brand/model, tracks shipped vs available quantity
 
 ---
 
 ## Pending / In Progress
 
-### 🔴 P0 - Critical
-1. **IMEI Lifecycle Tracking**
-   - UI for scanning IMEIs at different stages
-   - Status flow: Procured → Inward Nova → In-Transit → Inward Magnova → Sold
-   - Barcode/QR scanning integration
-
 ### 🟠 P1 - High Priority
-2. **Enhanced Payment Management**
+1. **Enhanced Payment Management**
    - Split payment support
    - Multi-party payments (Magnova → Nova, Nova → Vendor, Nova → 3rd party)
    - Payment status tracking
 
-3. **Logistics Document Uploads**
+2. **Logistics Document Uploads**
    - E-way bill attachment
    - POD (Proof of Delivery) uploads
-   - Shipment tracking
 
-4. **Verify Other Module Functionality**
-   - Test Logistics, Invoices, Sales Orders pages
-   - Ensure they're not just placeholders
+3. **Verify Other Module Functionality**
+   - Test Invoices, Sales Orders pages
 
 ### 🟡 P2 - Medium Priority
-5. **Configurable Approval Workflows**
-6. **Reporting Module Build-out**
-7. **Full Immutable Audit Trail**
+4. **Configurable Approval Workflows**
+5. **Reporting Module Build-out**
+6. **Full Immutable Audit Trail**
 
 ### 🔵 P3 - Technical Debt
-8. **Backend Refactoring**
+7. **Backend Refactoring**
    - Break monolithic `server.py` into modular structure
-   - Separate routers: `/routers/auth.py`, `/routers/purchase_orders.py`, etc.
-   - Separate models: `/models/po.py`, `/models/user.py`, etc.
+   - Separate routers and models
 
 ---
 
@@ -103,40 +110,21 @@ The system must provide end-to-end visibility from Purchase Order to Sales, with
 | Admin | admin@magnova.com | admin123 | Magnova |
 | Stores | stores@nova.com | nova123 | Nova |
 
-Full credentials list: `/app/LOGIN_CREDENTIALS.md`
-
 ---
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/auth/register` | POST | User registration |
 | `/api/auth/login` | POST | User login |
-| `/api/auth/me` | GET | Get current user |
 | `/api/purchase-orders` | GET, POST | List/Create POs |
-| `/api/purchase-orders/{po_number}` | GET | Get single PO |
+| `/api/purchase-orders/{po_number}` | GET | Get single PO with items |
 | `/api/purchase-orders/{po_number}/approve` | POST | Approve/Reject PO |
 | `/api/procurement` | GET, POST | Procurement records |
-| `/api/payments` | GET, POST | Payment records |
-| `/api/inventory` | GET, POST | IMEI inventory |
-| `/api/logistics` | GET, POST | Shipments |
-| `/api/invoices` | GET, POST | Invoices |
-| `/api/sales-orders` | GET, POST | Sales orders |
-
----
-
-## Database Collections
-
-- `users` - User accounts
-- `purchase_orders` - PO documents with line items
-- `procurements` - Procurement records
-- `payments` - Payment records
-- `imei_inventory` - IMEI tracking
-- `logistics` - Shipments
-- `invoices` - Invoice records
-- `sales_orders` - Sales orders
-- `audit_logs` - Audit trail
+| `/api/inventory` | GET | IMEI inventory list |
+| `/api/inventory/scan` | POST | Scan IMEI with new actions |
+| `/api/logistics/shipments` | GET, POST | Shipments list/create |
+| `/api/logistics/shipments/{id}/status` | PATCH | Update shipment status |
 
 ---
 
@@ -145,26 +133,19 @@ Full credentials list: `/app/LOGIN_CREDENTIALS.md`
 ```
 /app/
 ├── backend/
-│   ├── .env
-│   ├── requirements.txt
-│   ├── server.py          # Main FastAPI app
+│   ├── server.py          # FastAPI app with all endpoints
 │   └── tests/
-│       └── test_purchase_orders.py
+│       ├── test_purchase_orders.py
+│       └── test_crm_features.py
 ├── frontend/
-│   ├── .env
-│   ├── package.json
-│   ├── src/
-│   │   ├── App.js
-│   │   ├── components/
-│   │   │   ├── Layout.js
-│   │   │   ├── Sidebar.js
-│   │   │   ├── POLineItemRow.js
-│   │   │   └── ui/
-│   │   ├── context/
-│   │   │   └── AuthContext.js
-│   │   └── pages/
-│   └── craco.config.js
-├── training_materials/
+│   └── src/
+│       ├── pages/
+│       │   ├── PurchaseOrdersPage.js
+│       │   ├── ProcurementPage.js    # With PO auto-populate
+│       │   ├── InventoryPage.js      # With new scan fields
+│       │   └── LogisticsPage.js      # With status update
+│       └── components/
+│           └── POLineItemRow.js
 └── memory/
     └── PRD.md
 ```
