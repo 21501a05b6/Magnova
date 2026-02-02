@@ -481,32 +481,47 @@ export const PurchaseOrdersPage = () => {
           open={approvalDialog.open}
           onOpenChange={(open) => setApprovalDialog({ open, po: approvalDialog.po })}
         >
-          <DialogContent>
+          <DialogContent className="bg-white">
             <DialogHeader>
-              <DialogTitle>Review Purchase Order</DialogTitle>
+              <DialogTitle className="text-magnova-orange">Review Purchase Order</DialogTitle>
               <DialogDescription>
                 PO Number: <span className="font-mono font-bold">{approvalDialog.po?.po_number}</span>
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
-                <p className="text-sm text-slate-600">Quantity: {approvalDialog.po?.total_quantity}</p>
-                <p className="text-sm text-slate-600">Notes: {approvalDialog.po?.notes || 'N/A'}</p>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-500">PO Date:</span>
+                  <span className="ml-2 text-slate-900">{approvalDialog.po?.po_date ? new Date(approvalDialog.po.po_date).toLocaleDateString() : '-'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Purchase Office:</span>
+                  <span className="ml-2 text-slate-900">{approvalDialog.po?.purchase_office || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Total Quantity:</span>
+                  <span className="ml-2 text-slate-900">{approvalDialog.po?.total_quantity}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Total Value:</span>
+                  <span className="ml-2 text-slate-900 font-medium">₹{(approvalDialog.po?.total_value || 0).toFixed(2)}</span>
+                </div>
               </div>
               <div>
-                <Label htmlFor="rejection">Rejection Reason (if rejecting)</Label>
+                <Label htmlFor="rejection" className="text-slate-700">Rejection Reason (if rejecting)</Label>
                 <Textarea
                   id="rejection"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   rows={3}
+                  className="bg-white text-slate-900"
                   data-testid="rejection-reason-input"
                 />
               </div>
               <div className="flex gap-2">
                 <Button
                   onClick={() => handleApproval(approvalDialog.po?.po_number, 'approve')}
-                  className="flex-1"
+                  className="flex-1 bg-green-600 hover:bg-green-700"
                   data-testid="approve-button"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
@@ -522,6 +537,96 @@ export const PurchaseOrdersPage = () => {
                   Reject
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* View PO Details Dialog */}
+        <Dialog
+          open={viewDialog.open}
+          onOpenChange={(open) => setViewDialog({ open, po: viewDialog.po })}
+        >
+          <DialogContent className="bg-white max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-magnova-orange">Purchase Order Details</DialogTitle>
+              <DialogDescription>
+                PO Number: <span className="font-mono font-bold text-magnova-blue">{viewDialog.po?.po_number}</span>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* PO Header Info */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">PO Date</p>
+                  <p className="text-sm font-medium text-slate-900">{viewDialog.po?.po_date ? new Date(viewDialog.po.po_date).toLocaleDateString() : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Purchase Office</p>
+                  <p className="text-sm font-medium text-slate-900">{viewDialog.po?.purchase_office || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Created By</p>
+                  <p className="text-sm font-medium text-slate-900">{viewDialog.po?.created_by_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Status</p>
+                  {viewDialog.po && getStatusBadge(viewDialog.po.approval_status)}
+                </div>
+              </div>
+
+              {/* Line Items Table */}
+              {viewDialog.po?.items && viewDialog.po.items.length > 0 ? (
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-magnova-blue text-white">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-medium">SL No</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">Vendor</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">Location</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">Brand</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">Model</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">Storage</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">Colour</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">IMEI</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">Qty</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">Rate</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium">PO Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {viewDialog.po.items.map((item, index) => (
+                          <tr key={index} className="border-t border-slate-100 hover:bg-slate-50">
+                            <td className="px-3 py-2 text-slate-900">{item.sl_no || index + 1}</td>
+                            <td className="px-3 py-2 text-slate-900">{item.vendor}</td>
+                            <td className="px-3 py-2 text-slate-900">{item.location}</td>
+                            <td className="px-3 py-2 text-slate-900">{item.brand}</td>
+                            <td className="px-3 py-2 text-slate-900">{item.model}</td>
+                            <td className="px-3 py-2 text-slate-900">{item.storage || '-'}</td>
+                            <td className="px-3 py-2 text-slate-900">{item.colour || '-'}</td>
+                            <td className="px-3 py-2 text-slate-900 font-mono text-xs">{item.imei || '-'}</td>
+                            <td className="px-3 py-2 text-slate-900">{item.qty}</td>
+                            <td className="px-3 py-2 text-slate-900">₹{(item.rate || 0).toFixed(2)}</td>
+                            <td className="px-3 py-2 text-slate-900 font-medium">₹{(item.po_value || 0).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                        <tr>
+                          <td colSpan="8" className="px-3 py-3 text-right font-medium text-slate-900">Total:</td>
+                          <td className="px-3 py-3 font-bold text-slate-900">{viewDialog.po.total_quantity}</td>
+                          <td className="px-3 py-3"></td>
+                          <td className="px-3 py-3 font-bold text-magnova-orange">₹{(viewDialog.po.total_value || 0).toFixed(2)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
+                  No line items found for this PO
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
