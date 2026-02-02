@@ -667,17 +667,38 @@ async def create_shipment(shipment_data: ShipmentCreate, current_user: User = De
         "pickup_date": shipment_data.pickup_date.isoformat(),
         "expected_delivery": shipment_data.expected_delivery.isoformat(),
         "actual_delivery": None,
-        "status": "In Transit",
+        "status": "Pending",
         "imei_list": shipment_data.imei_list,
+        "pickup_quantity": shipment_data.pickup_quantity or len(shipment_data.imei_list),
+        "brand": shipment_data.brand,
+        "model": shipment_data.model,
         "created_by": current_user.user_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
     await db.logistics_shipments.insert_one(shipment_doc)
-    await create_audit_log("CREATE", "Shipment", shipment_doc["shipment_id"], current_user, {"imei_count": len(shipment_data.imei_list)})
+    await create_audit_log("CREATE", "Shipment", shipment_doc["shipment_id"], current_user, {"pickup_quantity": shipment_doc["pickup_quantity"]})
     
     return LogisticsShipment(**{k: v for k, v in shipment_doc.items() if k != "_id"})
+
+@api_router.patch("/logistics/shipments/{shipment_id}/status")
+async def update_shipment_status(shipment_id: str, status_update: ShipmentStatusUpdate, current_user: User = Depends(get_current_user)):
+    result = await db.logistics_shipments.update_one(
+        {"shipment_id": shipment_id},
+        {
+            "$set": {
+                "status": status_update.status,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "actual_delivery": datetime.now(timezone.utc).isoformat() if status_update.status == "Delivered" else None
+            }
+        }
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+    
+    await create_audit_log("UPDATE", "Shipment", shipment_id, current_user, {"new_status": status_update.status})
+    return {"message": "Status updated successfully"}
 
 @api_router.get("/logistics/shipments", response_model=List[LogisticsShipment])
 async def get_shipments(current_user: User = Depends(get_current_user)):
@@ -693,6 +714,13 @@ async def get_shipments(current_user: User = Depends(get_current_user)):
             shipment['created_at'] = datetime.fromisoformat(shipment['created_at'])
         if isinstance(shipment.get('updated_at'), str):
             shipment['updated_at'] = datetime.fromisoformat(shipment['updated_at'])
+        # Ensure backward compatibility
+        if 'pickup_quantity' not in shipment:
+            shipment['pickup_quantity'] = len(shipment.get('imei_list', []))
+        if 'brand' not in shipment:
+            shipment['brand'] = None
+        if 'model' not in shipment:
+            shipment['model'] = None
     return [LogisticsShipment(**shipment) for shipment in shipments]
 
 # Invoice Endpoints
