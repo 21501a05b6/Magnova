@@ -24,6 +24,17 @@ export const PurchaseOrdersPage = () => {
   const [approvalDialog, setApprovalDialog] = useState({ open: false, po: null });
   const [formData, setFormData] = useState({ total_quantity: '', notes: '' });
   const [rejectionReason, setRejectionReason] = useState('');
+  const [lineItems, setLineItems] = useState([{
+    vendor: '',
+    location: '',
+    brand: '',
+    model: '',
+    storage: '',
+    colour: '',
+    imei: '',
+    qty: '1',
+    rate: '',
+  }]);
   const { user } = useAuth();
 
   useEffect(() => {
