@@ -91,7 +91,7 @@ Logistics → Invoicing → Sales Orders (Export)
 
 ### Accessing the System
 
-**URL**: https://magnova-nova.preview.emergentagent.com
+**URL**: https://mobinventory-3.preview.emergentagent.com
 
 ### Registration Process
 
