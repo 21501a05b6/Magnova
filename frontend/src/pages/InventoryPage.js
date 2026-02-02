@@ -16,17 +16,18 @@ export const InventoryPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [locations, setLocations] = useState([]);
+  const [vendors, setVendors] = useState([]);
   const [scanData, setScanData] = useState({
     imei: '',
     action: '',
     location: '',
     organization: 'Nova',
-    customer_organization: '',
+    vendor: '',
   });
 
   useEffect(() => {
     fetchInventory();
-    fetchLocations();
+    fetchPOData();
   }, []);
 
   useEffect(() => {
@@ -42,21 +43,24 @@ export const InventoryPage = () => {
     }
   };
 
-  // Fetch unique locations from POs
-  const fetchLocations = async () => {
+  // Fetch unique locations and vendors from POs
+  const fetchPOData = async () => {
     try {
       const response = await api.get('/purchase-orders');
       const allLocations = new Set();
+      const allVendors = new Set();
       response.data.forEach(po => {
         if (po.items) {
           po.items.forEach(item => {
             if (item.location) allLocations.add(item.location);
+            if (item.vendor) allVendors.add(item.vendor);
           });
         }
       });
       setLocations(Array.from(allLocations));
+      setVendors(Array.from(allVendors));
     } catch (error) {
-      console.error('Error fetching locations:', error);
+      console.error('Error fetching PO data:', error);
     }
   };
 
@@ -78,10 +82,16 @@ export const InventoryPage = () => {
   const handleScan = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/inventory/scan', scanData);
+      await api.post('/inventory/scan', {
+        imei: scanData.imei,
+        action: scanData.action,
+        location: scanData.location,
+        organization: scanData.organization,
+        vendor: scanData.vendor,
+      });
       toast.success('IMEI scanned successfully');
       setDialogOpen(false);
-      setScanData({ imei: '', action: '', location: '', organization: 'Nova', customer_organization: '' });
+      setScanData({ imei: '', action: '', location: '', organization: 'Nova', vendor: '' });
       fetchInventory();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to scan IMEI');
@@ -151,14 +161,25 @@ export const InventoryPage = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-slate-700">Customer Organization *</Label>
-                  <Select value={scanData.customer_organization} onValueChange={(value) => setScanData({ ...scanData, customer_organization: value })} required>
+                  <Label className="text-slate-700">Vendor *</Label>
+                  <Select value={scanData.vendor} onValueChange={(value) => setScanData({ ...scanData, vendor: value })} required>
                     <SelectTrigger className="bg-white text-slate-900">
-                      <SelectValue placeholder="Select customer organization" />
+                      <SelectValue placeholder="Select vendor" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      <SelectItem value="Nova">Nova Enterprises</SelectItem>
-                      <SelectItem value="Magnova">Magnova Exim</SelectItem>
+                      {vendors.length > 0 ? (
+                        vendors.map((vendor) => (
+                          <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="Croma">Croma</SelectItem>
+                          <SelectItem value="Reliance Digital">Reliance Digital</SelectItem>
+                          <SelectItem value="Vijay Sales">Vijay Sales</SelectItem>
+                          <SelectItem value="Amazon">Amazon</SelectItem>
+                          <SelectItem value="Flipkart">Flipkart</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
