@@ -176,6 +176,7 @@ class IMEIScan(BaseModel):
     action: str
     location: str
     organization: str
+    customer_organization: Optional[str] = None
 
 class LogisticsShipment(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -191,6 +192,9 @@ class LogisticsShipment(BaseModel):
     actual_delivery: Optional[datetime] = None
     status: str
     imei_list: List[str]
+    pickup_quantity: Optional[int] = 0
+    brand: Optional[str] = None
+    model: Optional[str] = None
     created_by: str
     created_at: datetime
     updated_at: datetime
@@ -203,7 +207,13 @@ class ShipmentCreate(BaseModel):
     to_location: str
     pickup_date: datetime
     expected_delivery: datetime
-    imei_list: List[str]
+    imei_list: List[str] = []
+    pickup_quantity: Optional[int] = 0
+    brand: Optional[str] = None
+    model: Optional[str] = None
+
+class ShipmentStatusUpdate(BaseModel):
+    status: str
 
 class Invoice(BaseModel):
     model_config = ConfigDict(extra="ignore")
