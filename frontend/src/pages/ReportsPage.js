@@ -218,6 +218,21 @@ export const ReportsPage = () => {
     return `₹${amount.toLocaleString('en-IN')}`;
   };
 
+  const handleDeleteRow = async (row) => {
+    const confirmMsg = `Are you sure you want to delete this record?\n\nPO: ${row.po_id}\nVendor: ${row.vendor}\nThis will delete the PO entry and related data.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      // Delete the PO (this is the source record)
+      await api.delete(`/purchase-orders/${row.po_id}`);
+      toast.success(`Record for ${row.po_id} deleted successfully`);
+      fetchMasterReport();
+      fetchStats();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete record');
+    }
+  };
+
   return (
     <Layout>
       <div data-testid="reports-page">
