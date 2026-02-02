@@ -15,10 +15,18 @@ export const InventoryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [scanData, setScanData] = useState({ imei: '', action: '', location: '', organization: 'Nova' });
+  const [locations, setLocations] = useState([]);
+  const [scanData, setScanData] = useState({
+    imei: '',
+    action: '',
+    location: '',
+    organization: 'Nova',
+    customer_organization: '',
+  });
 
   useEffect(() => {
     fetchInventory();
+    fetchLocations();
   }, []);
 
   useEffect(() => {
@@ -31,6 +39,24 @@ export const InventoryPage = () => {
       setInventory(response.data);
     } catch (error) {
       toast.error('Failed to fetch inventory');
+    }
+  };
+
+  // Fetch unique locations from POs
+  const fetchLocations = async () => {
+    try {
+      const response = await api.get('/purchase-orders');
+      const allLocations = new Set();
+      response.data.forEach(po => {
+        if (po.items) {
+          po.items.forEach(item => {
+            if (item.location) allLocations.add(item.location);
+          });
+        }
+      });
+      setLocations(Array.from(allLocations));
+    } catch (error) {
+      console.error('Error fetching locations:', error);
     }
   };
 
@@ -55,7 +81,7 @@ export const InventoryPage = () => {
       await api.post('/inventory/scan', scanData);
       toast.success('IMEI scanned successfully');
       setDialogOpen(false);
-      setScanData({ imei: '', action: '', location: '', organization: 'Nova' });
+      setScanData({ imei: '', action: '', location: '', organization: 'Nova', customer_organization: '' });
       fetchInventory();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to scan IMEI');
@@ -67,9 +93,11 @@ export const InventoryPage = () => {
       Procured: 'bg-blue-50 text-blue-700 border-blue-200',
       'Inward Nova': 'bg-purple-50 text-purple-700 border-purple-200',
       'Inward Magnova': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      'Outward Nova': 'bg-orange-50 text-orange-700 border-orange-200',
+      'Outward Magnova': 'bg-amber-50 text-amber-700 border-amber-200',
       Available: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       Reserved: 'bg-orange-50 text-orange-700 border-orange-300',
-      Dispatched: 'bg-orange-50 text-orange-700 border-orange-200',
+      Dispatched: 'bg-cyan-50 text-cyan-700 border-cyan-200',
     };
     return colors[status] || 'bg-slate-50 text-slate-700 border-slate-200';
   };
@@ -84,63 +112,93 @@ export const InventoryPage = () => {
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button data-testid="scan-imei-button">
+              <Button data-testid="scan-imei-button" className="bg-magnova-blue hover:bg-magnova-dark-blue">
                 <Scan className="w-4 h-4 mr-2" />
                 Scan IMEI
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-white max-w-lg">
               <DialogHeader>
-                <DialogTitle>Scan IMEI</DialogTitle>
-                <DialogDescription>Update IMEI status and location</DialogDescription>
+                <DialogTitle className="text-magnova-orange">Scan IMEI</DialogTitle>
+                <DialogDescription className="text-slate-600">Update IMEI status and location</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleScan} className="space-y-4" data-testid="scan-form">
                 <div>
-                  <Label>IMEI Number</Label>
+                  <Label className="text-slate-700">IMEI Number *</Label>
                   <Input
                     value={scanData.imei}
                     onChange={(e) => setScanData({ ...scanData, imei: e.target.value })}
                     required
-                    className="font-mono"
+                    className="font-mono bg-white text-slate-900"
                     data-testid="scan-imei-input"
+                    placeholder="Enter IMEI number"
                   />
                 </div>
                 <div>
-                  <Label>Action</Label>
+                  <Label className="text-slate-700">Action *</Label>
                   <Select value={scanData.action} onValueChange={(value) => setScanData({ ...scanData, action: value })} required>
-                    <SelectTrigger data-testid="scan-action-select">
+                    <SelectTrigger data-testid="scan-action-select" className="bg-white text-slate-900">
                       <SelectValue placeholder="Select action" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       <SelectItem value="inward_nova">Inward Nova</SelectItem>
                       <SelectItem value="inward_magnova">Inward Magnova</SelectItem>
+                      <SelectItem value="outward_nova">Outward Nova</SelectItem>
+                      <SelectItem value="outward_magnova">Outward Magnova</SelectItem>
                       <SelectItem value="dispatch">Dispatch</SelectItem>
                       <SelectItem value="available">Mark Available</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Location</Label>
-                  <Input
-                    value={scanData.location}
-                    onChange={(e) => setScanData({ ...scanData, location: e.target.value })}
-                    required
-                    data-testid="scan-location-input"
-                  />
+                  <Label className="text-slate-700">Customer Organization *</Label>
+                  <Select value={scanData.customer_organization} onValueChange={(value) => setScanData({ ...scanData, customer_organization: value })} required>
+                    <SelectTrigger className="bg-white text-slate-900">
+                      <SelectValue placeholder="Select customer organization" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="Nova">Nova Enterprises</SelectItem>
+                      <SelectItem value="Magnova">Magnova Exim</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <Label>Organization</Label>
+                  <Label className="text-slate-700">Location *</Label>
+                  <Select value={scanData.location} onValueChange={(value) => setScanData({ ...scanData, location: value })} required>
+                    <SelectTrigger className="bg-white text-slate-900" data-testid="scan-location-select">
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      {locations.length > 0 ? (
+                        locations.map((loc) => (
+                          <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="Mumbai">Mumbai</SelectItem>
+                          <SelectItem value="Delhi">Delhi</SelectItem>
+                          <SelectItem value="Bangalore">Bangalore</SelectItem>
+                          <SelectItem value="Chennai">Chennai</SelectItem>
+                          <SelectItem value="Hyderabad">Hyderabad</SelectItem>
+                          <SelectItem value="Pune">Pune</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-slate-700">Organization *</Label>
                   <Select value={scanData.organization} onValueChange={(value) => setScanData({ ...scanData, organization: value })} required>
-                    <SelectTrigger data-testid="scan-org-select">
+                    <SelectTrigger data-testid="scan-org-select" className="bg-white text-slate-900">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       <SelectItem value="Nova">Nova</SelectItem>
                       <SelectItem value="Magnova">Magnova</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full" data-testid="submit-scan">
+                <Button type="submit" className="w-full bg-magnova-blue hover:bg-magnova-dark-blue" data-testid="submit-scan">
                   Scan & Update
                 </Button>
               </form>
@@ -155,19 +213,21 @@ export const InventoryPage = () => {
               placeholder="Search by IMEI or model..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-white"
               data-testid="inventory-search"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48" data-testid="status-filter">
+            <SelectTrigger className="w-48 bg-white" data-testid="status-filter">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="Procured">Procured</SelectItem>
               <SelectItem value="Inward Nova">Inward Nova</SelectItem>
               <SelectItem value="Inward Magnova">Inward Magnova</SelectItem>
+              <SelectItem value="Outward Nova">Outward Nova</SelectItem>
+              <SelectItem value="Outward Magnova">Outward Magnova</SelectItem>
               <SelectItem value="Available">Available</SelectItem>
               <SelectItem value="Reserved">Reserved</SelectItem>
               <SelectItem value="Dispatched">Dispatched</SelectItem>
@@ -179,13 +239,13 @@ export const InventoryPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="inventory-table">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">IMEI</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Device Model</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Organization</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Location</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Updated</th>
+                <tr className="bg-magnova-blue text-white">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">IMEI</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Device Model</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Organization</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Updated</th>
                 </tr>
               </thead>
               <tbody>
@@ -197,7 +257,7 @@ export const InventoryPage = () => {
                   </tr>
                 ) : (
                   filteredInventory.map((item) => (
-                    <tr key={item.imei} className="table-row border-b border-slate-100" data-testid="inventory-row">
+                    <tr key={item.imei} className="table-row border-b border-slate-100 hover:bg-slate-50" data-testid="inventory-row">
                       <td className="px-4 py-3 text-sm font-mono font-medium text-slate-900">{item.imei}</td>
                       <td className="px-4 py-3 text-sm text-slate-900">{item.device_model}</td>
                       <td className="px-4 py-3 text-sm">
