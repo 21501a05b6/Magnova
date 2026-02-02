@@ -38,6 +38,7 @@ export const PurchaseOrdersPage = () => {
   const [purchaseOffice, setPurchaseOffice] = useState('Magnova Head Office');
   const [lineItems, setLineItems] = useState([{ ...emptyItem }]);
   const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
 
   useEffect(() => { fetchPOs(); }, []);
 
@@ -101,6 +102,17 @@ export const PurchaseOrdersPage = () => {
       fetchPOs();
     } catch (error) {
       toast.error(error.response?.data?.detail || `Failed to ${action} PO`);
+    }
+  };
+
+  const handleDelete = async (poNumber) => {
+    if (!window.confirm(`Are you sure you want to delete PO ${poNumber}?`)) return;
+    try {
+      await api.delete(`/purchase-orders/${poNumber}`);
+      toast.success('Purchase order deleted successfully');
+      fetchPOs();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete PO');
     }
   };
 
