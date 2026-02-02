@@ -321,9 +321,14 @@ export const ReportsPage = () => {
                   <th colSpan="4" className="bg-orange-600 text-white px-2 py-2 text-left text-sm font-bold border-r border-orange-500">
                     LOGISTICS
                   </th>
-                  <th colSpan="4" className="bg-pink-500 text-white px-2 py-2 text-left text-sm font-bold">
+                  <th colSpan="4" className="bg-pink-500 text-white px-2 py-2 text-left text-sm font-bold border-r border-pink-400">
                     STORES
                   </th>
+                  {isAdmin && (
+                    <th className="bg-red-600 text-white px-2 py-2 text-left text-sm font-bold">
+                      ACTIONS
+                    </th>
+                  )}
                 </tr>
                 {/* Column Headers */}
                 <tr className="bg-slate-100">
