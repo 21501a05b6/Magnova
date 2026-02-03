@@ -101,7 +101,7 @@ export const ProcurementPage = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/procurement', {
+      const procurementData = {
         po_number: formData.po_number,
         vendor_name: formData.vendor_name,
         store_location: formData.store_location,
@@ -110,7 +110,20 @@ export const ProcurementPage = () => {
         device_model: `${formData.brand} ${formData.device_model}`,
         quantity: parseInt(formData.quantity) || 1,
         purchase_price: parseFloat(formData.purchase_price),
+      };
+      
+      await api.post('/procurement', procurementData);
+      
+      // Add notification for logistics page
+      addProcurementNotification({
+        po_number: formData.po_number,
+        imei: formData.imei,
+        vendor_name: formData.vendor_name,
+        brand: formData.brand,
+        model: formData.device_model,
+        store_location: formData.store_location,
       });
+      
       toast.success('Procurement record created successfully');
       setDialogOpen(false);
       resetForm();
