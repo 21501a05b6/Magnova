@@ -29,10 +29,10 @@ The system must provide end-to-end visibility from Purchase Order to Sales, with
 - Quick links to all modules
 - User profile display
 
-### ✅ Purchase Order Management (Complete - Updated Feb 2, 2025)
-- **PO List Page**: Displays all line item attributes (SL No, PO_ID, P.O Date, Purchase Office, Vendor, Location, Brand, Model, Storage, Colour, IMEI, Qty, Rate, PO Value, Status, Actions)
+### ✅ Purchase Order Management (Complete - Updated Feb 3, 2025)
+- **PO List Page**: Displays all line item attributes (SL No, PO_ID, P.O Date, Purchase Office, Vendor, Location, Brand, Model, Storage, Colour, Qty, Rate, PO Value, Status, Actions) - **IMEI column removed**
 - **Create PO Dialog**: Full line item support with all device details
-- **View PO Details**: Dialog showing header info and line items table
+- **View PO Details**: Dialog showing header info and line items table (IMEI removed)
 - **PO Approval Workflow**: Review, Approve, Reject with reason
 - **Cascade Delete**: Deleting PO removes all related procurement, payments, logistics, inventory records
 
