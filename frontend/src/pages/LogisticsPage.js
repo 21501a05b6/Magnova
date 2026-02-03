@@ -207,6 +207,44 @@ export const LogisticsPage = () => {
     setStatusDialogOpen(true);
   };
 
+  // Handle clicking on a procurement notification - open create shipment dialog with pre-filled data
+  const handleNotificationClick = (procurement) => {
+    // Find the PO to get line item details
+    const po = pos.find(p => p.po_number === procurement.po_number);
+    if (po) {
+      setSelectedPO(po);
+      if (po.items && po.items.length > 0) {
+        setPOItems(po.items);
+        // Find matching item by vendor or model
+        const matchingItemIndex = po.items.findIndex(item => 
+          item.vendor === procurement.vendor_name || 
+          item.model === procurement.model
+        );
+        if (matchingItemIndex >= 0) {
+          handleItemSelect(matchingItemIndex.toString(), po.items, po.po_number);
+        } else if (po.items.length === 1) {
+          handleItemSelect('0', po.items, po.po_number);
+        }
+      }
+    }
+    
+    // Pre-fill with procurement location
+    setFormData(prev => ({
+      ...prev,
+      po_number: procurement.po_number,
+      from_location: procurement.store_location || '',
+      vendor: procurement.vendor_name || '',
+      brand: procurement.brand || '',
+      model: procurement.model || '',
+    }));
+    
+    // Clear this notification
+    clearProcurementNotification(procurement.po_number, procurement.imei);
+    
+    // Open dialog
+    setDialogOpen(true);
+  };
+
   const handleDelete = async (shipmentId) => {
     if (!window.confirm('Are you sure you want to delete this shipment?')) return;
     try {
