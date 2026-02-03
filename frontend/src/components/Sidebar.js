@@ -9,7 +9,6 @@ import {
   Boxes,
   Truck,
   FileText,
-  ShoppingBag,
   BarChart3,
   Users,
   LogOut,
