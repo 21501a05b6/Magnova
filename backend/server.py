@@ -1124,6 +1124,33 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         "total_payment_amount": total_payment_amount
     }
 
+# Get related records count for a PO (for confirmation before delete)
+@api_router.get("/purchase-orders/{po_number}/related-counts")
+async def get_po_related_counts(po_number: str, current_user: User = Depends(get_current_user)):
+    po = await db.purchase_orders.find_one({"po_number": po_number})
+    if not po:
+        raise HTTPException(status_code=404, detail="PO not found")
+    
+    procurement_count = await db.procurement.count_documents({"po_number": po_number})
+    payments_count = await db.payments.count_documents({"po_number": po_number})
+    logistics_count = await db.logistics_shipments.count_documents({"po_number": po_number})
+    invoices_count = await db.invoices.count_documents({"po_number": po_number})
+    
+    # Get IMEIs from procurement to count inventory
+    procurement_records = await db.procurement.find({"po_number": po_number}, {"imei": 1}).to_list(1000)
+    imeis = [p.get("imei") for p in procurement_records if p.get("imei")]
+    inventory_count = await db.imei_inventory.count_documents({"imei": {"$in": imeis}}) if imeis else 0
+    
+    return {
+        "po_number": po_number,
+        "procurement_records": procurement_count,
+        "payments": payments_count,
+        "logistics_shipments": logistics_count,
+        "inventory_items": inventory_count,
+        "invoices": invoices_count,
+        "total_related": procurement_count + payments_count + logistics_count + inventory_count + invoices_count
+    }
+
 @api_router.get("/reports/po-summary")
 async def get_po_summary(po_number: str, current_user: User = Depends(get_current_user)):
     po = await db.purchase_orders.find_one({"po_number": po_number}, {"_id": 0})
