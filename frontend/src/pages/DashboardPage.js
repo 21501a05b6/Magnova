@@ -21,7 +21,9 @@ export const DashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { user } = useAuth();
+  const { refreshTimestamps } = useDataRefresh();
 
   useEffect(() => {
     fetchStats();
@@ -30,7 +32,15 @@ export const DashboardPage = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // React to global refresh triggers
+  useEffect(() => {
+    if (!loading) {
+      fetchStats();
+    }
+  }, [refreshTimestamps.dashboard]);
+
   const fetchStats = async () => {
+    setIsRefreshing(true);
     try {
       const response = await api.get('/reports/dashboard');
       setStats(response.data);
@@ -39,6 +49,7 @@ export const DashboardPage = () => {
       console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
