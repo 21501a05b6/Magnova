@@ -144,14 +144,47 @@ export const InventoryPage = () => {
         organization: 'Nova',
         vendor: scanData.vendor,
       });
-      toast.success('IMEI scanned successfully');
+      
+      // Clear inventory notification if exists
+      // Find matching notification by searching through pending
+      pendingInventory.forEach(notif => {
+        if (notif.po_number) {
+          clearInventoryNotification(notif.po_number, notif.shipment_id);
+        }
+      });
+      
+      // Trigger invoice notification
+      addInvoiceNotification({
+        po_number: imeiLookup?.po_number || '',
+        imei: scanData.imei,
+        brand: scanData.brand,
+        model: scanData.model,
+        vendor: scanData.vendor,
+        location: scanData.location,
+        action: scanData.action,
+      });
+      
+      toast.success('IMEI scanned - Invoice notification sent');
       setDialogOpen(false);
       setScanData({ imei: '', action: '', location: '', vendor: '', brand: '', model: '', colour: '' });
       setImeiLookup(null);
-      refreshAfterInventoryChange(); // Trigger refresh
+      refreshAfterInventoryChange();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to scan IMEI');
     }
+  };
+
+  // Handle notification click - pre-fill form
+  const handleNotificationClick = (notification) => {
+    setScanData(prev => ({
+      ...prev,
+      brand: notification.brand || '',
+      model: notification.model || '',
+      vendor: notification.vendor || '',
+      location: notification.to_location || notification.from_location || '',
+    }));
+    clearInventoryNotification(notification.po_number, notification.shipment_id);
+    setDialogOpen(true);
   };
 
   const handleDelete = async (imei) => {
