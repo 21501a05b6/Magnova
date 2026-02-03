@@ -28,12 +28,11 @@ export const Sidebar = () => {
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Purchase', 'Approver', 'Accounts', 'Stores', 'Logistics', 'Sales'] },
     { path: '/purchase-orders', icon: ShoppingCart, label: 'Purchase Orders', roles: ['Admin', 'Purchase', 'Approver'] },
-    { path: '/procurement', icon: Package, label: 'Procurement', roles: ['Admin', 'Stores'] },
     { path: '/payments', icon: CreditCard, label: 'Payments', roles: ['Admin', 'Accounts'] },
-    { path: '/inventory', icon: Boxes, label: 'Inventory', roles: ['Admin', 'Stores', 'Logistics'] },
+    { path: '/procurement', icon: Package, label: 'Procurement', roles: ['Admin', 'Stores'] },
     { path: '/logistics', icon: Truck, label: 'Logistics', roles: ['Admin', 'Logistics'] },
+    { path: '/inventory', icon: Boxes, label: 'Inventory', roles: ['Admin', 'Stores', 'Logistics'] },
     { path: '/invoices', icon: FileText, label: 'Invoices', roles: ['Admin', 'Accounts'] },
-    { path: '/sales-orders', icon: ShoppingBag, label: 'Sales Orders', roles: ['Admin', 'Sales'] },
     { path: '/reports', icon: BarChart3, label: 'Reports', roles: ['Admin', 'Approver'] },
     { path: '/users', icon: Users, label: 'Users', roles: ['Admin'] },
   ];
