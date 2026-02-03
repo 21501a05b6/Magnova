@@ -57,6 +57,10 @@ export const ReportsPage = () => {
       const shipments = shipmentsRes.data;
       const inventory = inventoryRes.data;
 
+      // Separate internal (Magnova->Nova) and external (Nova->Vendors) payments
+      const internalPayments = payments.filter(p => p.payment_type === 'internal' || !p.payment_type);
+      const externalPayments = payments.filter(p => p.payment_type === 'external');
+
       // Build master report by linking all data
       const report = [];
       let slNo = 1;
@@ -71,8 +75,11 @@ export const ReportsPage = () => {
               (p.vendor_name === item.vendor || p.device_model?.includes(item.model))
             );
 
-            // Find related payments
-            const relatedPayment = payments.find(p => p.po_number === po.po_number);
+            // Find related internal payment (Magnova -> Nova)
+            const relatedInternalPayment = internalPayments.find(p => p.po_number === po.po_number);
+
+            // Find related external payment (Nova -> Vendors)
+            const relatedExternalPayment = externalPayments.find(p => p.po_number === po.po_number);
 
             // Find related shipments
             const relatedShipment = shipments.find(s => 
@@ -87,7 +94,7 @@ export const ReportsPage = () => {
 
             report.push({
               sl_no: slNo++,
-              // PROCUREMENT SECTION (Nova to Magnova PO)
+              // PROCUREMENT SECTION (Magnova → Nova PO)
               po_id: po.po_number,
               po_date: po.po_date,
               purchase_office: po.purchase_office,
@@ -103,13 +110,22 @@ export const ReportsPage = () => {
               po_value: item.po_value,
               grn_no: relatedProcurement?.procurement_id?.slice(0, 8) || '-',
               
-              // FINANCE SECTION (Magnova to Nova)
-              payment_no: relatedPayment?.payment_id?.slice(0, 8) || '-',
-              bank_account: relatedPayment?.payment_mode === 'Bank Transfer' ? 'XXXX1234' : '-',
-              ifsc_code: relatedPayment?.payment_mode === 'Bank Transfer' ? 'HDFC0001234' : '-',
-              payment_date: relatedPayment?.payment_date || '-',
-              utr_no: relatedPayment?.transaction_ref || '-',
-              payment_amount: relatedPayment?.amount || 0,
+              // PAYMENT SECTION (Magnova → Nova) - Internal Payments
+              payment_no: relatedInternalPayment?.payment_id?.slice(0, 8) || '-',
+              bank_account: relatedInternalPayment?.payment_mode === 'Bank Transfer' ? 'XXXX1234' : '-',
+              ifsc_code: relatedInternalPayment?.payment_mode === 'Bank Transfer' ? 'HDFC0001234' : '-',
+              payment_date: relatedInternalPayment?.payment_date || '-',
+              utr_no: relatedInternalPayment?.transaction_ref || '-',
+              payment_amount: relatedInternalPayment?.amount || 0,
+              
+              // PAYMENTS SECTION (Nova → Vendors) - External Payments
+              ext_payment_no: relatedExternalPayment?.payment_id?.slice(0, 8) || '-',
+              ext_payee_name: relatedExternalPayment?.payee_name || '-',
+              ext_payee_type: relatedExternalPayment?.payee_type || '-',
+              ext_bank_account: relatedExternalPayment?.bank_account || '-',
+              ext_payment_date: relatedExternalPayment?.payment_date || '-',
+              ext_utr_no: relatedExternalPayment?.transaction_ref || '-',
+              ext_payment_amount: relatedExternalPayment?.amount || 0,
               
               // LOGISTICS SECTION
               courier_name: relatedShipment?.transporter_name || '-',
