@@ -256,7 +256,6 @@ export const PurchaseOrdersPage = () => {
                   <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Brand</th>
                   <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Model</th>
                   <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Storage</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Colour</th>
                   <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Qty</th>
                   <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Rate</th>
                   <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">PO Value</th>
@@ -266,9 +265,9 @@ export const PurchaseOrdersPage = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={15} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>
+                  <tr><td colSpan={14} className="px-4 py-8 text-center text-slate-500">Loading...</td></tr>
                 ) : pos.length === 0 ? (
-                  <tr><td colSpan={15} className="px-4 py-8 text-center text-slate-500">No purchase orders found</td></tr>
+                  <tr><td colSpan={14} className="px-4 py-8 text-center text-slate-500">No purchase orders found</td></tr>
                 ) : pos.flatMap((po, poIndex) => {
                   const items = po.items && po.items.length > 0 ? po.items : [{}];
                   return items.map((item, itemIndex) => (
@@ -282,7 +281,6 @@ export const PurchaseOrdersPage = () => {
                       <td className="px-3 py-2 text-sm text-slate-900">{item.brand || '-'}</td>
                       <td className="px-3 py-2 text-sm text-slate-900">{item.model || '-'}</td>
                       <td className="px-3 py-2 text-sm text-slate-900">{item.storage || '-'}</td>
-                      <td className="px-3 py-2 text-sm text-slate-900">{item.colour || '-'}</td>
                       <td className="px-3 py-2 text-sm text-slate-900">{item.qty || '-'}</td>
                       <td className="px-3 py-2 text-sm text-slate-900">{item.rate ? `₹${item.rate.toFixed(2)}` : '-'}</td>
                       <td className="px-3 py-2 text-sm font-medium text-slate-900">{item.po_value ? `₹${item.po_value.toFixed(2)}` : '-'}</td>
