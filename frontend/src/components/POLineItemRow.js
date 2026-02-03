@@ -57,14 +57,6 @@ export const POLineItemRow = ({ item, index, onUpdate, onRemove, canRemove }) =>
       </td>
       <td className="px-2 py-2">
         <Input
-          value={item.colour}
-          onChange={(e) => onUpdate(index, 'colour', e.target.value)}
-          placeholder="Colour"
-          className="h-8 text-xs bg-white text-slate-900"
-        />
-      </td>
-      <td className="px-2 py-2">
-        <Input
           type="number"
           value={item.qty}
           onChange={(e) => onUpdate(index, 'qty', e.target.value)}
