@@ -340,7 +340,6 @@ export const PurchaseOrdersPage = () => {
                         <th className="px-3 py-2 text-left text-xs font-medium">Model</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">Storage</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">Colour</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">IMEI</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">Qty</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">Rate</th>
                         <th className="px-3 py-2 text-left text-xs font-medium">Value</th>
@@ -356,7 +355,6 @@ export const PurchaseOrdersPage = () => {
                           <td className="px-3 py-2 text-slate-900">{item.model}</td>
                           <td className="px-3 py-2 text-slate-900">{item.storage || '-'}</td>
                           <td className="px-3 py-2 text-slate-900">{item.colour || '-'}</td>
-                          <td className="px-3 py-2 text-slate-900 font-mono text-xs">{item.imei || '-'}</td>
                           <td className="px-3 py-2 text-slate-900">{item.qty}</td>
                           <td className="px-3 py-2 text-slate-900">₹{(item.rate || 0).toFixed(2)}</td>
                           <td className="px-3 py-2 text-slate-900 font-medium">₹{(item.po_value || 0).toFixed(2)}</td>
@@ -365,7 +363,7 @@ export const PurchaseOrdersPage = () => {
                     </tbody>
                     <tfoot className="bg-slate-50 border-t-2 border-slate-200">
                       <tr>
-                        <td colSpan="8" className="px-3 py-3 text-right font-medium text-slate-900">Total:</td>
+                        <td colSpan="7" className="px-3 py-3 text-right font-medium text-slate-900">Total:</td>
                         <td className="px-3 py-3 font-bold text-slate-900">{viewDialog.po.total_quantity}</td>
                         <td></td>
                         <td className="px-3 py-3 font-bold text-magnova-orange">₹{(viewDialog.po.total_value || 0).toFixed(2)}</td>
