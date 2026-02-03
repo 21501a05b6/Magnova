@@ -1182,18 +1182,59 @@ async def get_audit_logs(entity_type: Optional[str] = None, current_user: User =
     logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(500).to_list(500)
     return logs
 
-# DELETE ENDPOINTS - Admin Only
+# DELETE ENDPOINTS - Admin Only with CASCADE
 @api_router.delete("/purchase-orders/{po_number}")
 async def delete_purchase_order(po_number: str, current_user: User = Depends(get_current_user)):
     if current_user.role != "Admin":
         raise HTTPException(status_code=403, detail="Only Admin can delete records")
     
-    result = await db.purchase_orders.delete_one({"po_number": po_number})
-    if result.deleted_count == 0:
+    # Check if PO exists
+    po = await db.purchase_orders.find_one({"po_number": po_number})
+    if not po:
         raise HTTPException(status_code=404, detail="PO not found")
     
-    await create_audit_log("DELETE", "PurchaseOrder", po_number, current_user, {})
-    return {"message": "Purchase order deleted successfully"}
+    # CASCADE DELETE - Delete all related records
+    deleted_counts = {
+        "procurement": 0,
+        "payments": 0,
+        "logistics": 0,
+        "inventory": 0,
+        "invoices": 0
+    }
+    
+    # 1. Get all procurement records for this PO (to get IMEIs)
+    procurement_records = await db.procurement.find({"po_number": po_number}).to_list(1000)
+    imeis_to_delete = [p.get("imei") for p in procurement_records if p.get("imei")]
+    
+    # 2. Delete related inventory items
+    if imeis_to_delete:
+        inv_result = await db.imei_inventory.delete_many({"imei": {"$in": imeis_to_delete}})
+        deleted_counts["inventory"] = inv_result.deleted_count
+    
+    # 3. Delete all procurement records for this PO
+    proc_result = await db.procurement.delete_many({"po_number": po_number})
+    deleted_counts["procurement"] = proc_result.deleted_count
+    
+    # 4. Delete all payments for this PO
+    pay_result = await db.payments.delete_many({"po_number": po_number})
+    deleted_counts["payments"] = pay_result.deleted_count
+    
+    # 5. Delete all logistics/shipments for this PO
+    log_result = await db.logistics_shipments.delete_many({"po_number": po_number})
+    deleted_counts["logistics"] = log_result.deleted_count
+    
+    # 6. Delete all invoices for this PO
+    inv_result = await db.invoices.delete_many({"po_number": po_number})
+    deleted_counts["invoices"] = inv_result.deleted_count
+    
+    # 7. Finally delete the PO
+    await db.purchase_orders.delete_one({"po_number": po_number})
+    
+    await create_audit_log("CASCADE_DELETE", "PurchaseOrder", po_number, current_user, deleted_counts)
+    return {
+        "message": f"Purchase order {po_number} and all related records deleted successfully",
+        "deleted_counts": deleted_counts
+    }
 
 @api_router.delete("/procurement/{procurement_id}")
 async def delete_procurement(procurement_id: str, current_user: User = Depends(get_current_user)):
