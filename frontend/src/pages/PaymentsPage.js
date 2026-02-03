@@ -646,8 +646,8 @@ export const PaymentsPage = () => {
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">PO Number</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Payee Type</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Payee Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Account</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">IFSC</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Account/Card #</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">IFSC/Bank</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Location</th>
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Amount</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">UTR</th>
@@ -670,12 +670,24 @@ export const PaymentsPage = () => {
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
                             payment.payee_type === 'vendor' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
                           }`}>
-                            {payment.payee_type?.toUpperCase() || '-'}
+                            {payment.payee_type === 'cc' ? 'CREDIT CARD' : payment.payee_type?.toUpperCase() || '-'}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-900">{payment.payee_name}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-slate-600">{payment.account_number || '-'}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-slate-600">{payment.ifsc_code || '-'}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-slate-600">
+                          {payment.payee_type === 'cc' ? (
+                            <span title="Credit Card Number">{payment.account_number || '-'}</span>
+                          ) : (
+                            <span title="Account Number">{payment.account_number || '-'}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {payment.payee_type === 'cc' ? (
+                            <span title="Bank Name">{payment.ifsc_code || '-'}</span>
+                          ) : (
+                            <span title="IFSC Code" className="font-mono">{payment.ifsc_code || '-'}</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-sm text-slate-600">{payment.location || '-'}</td>
                         <td className="px-4 py-3 text-sm text-right font-medium text-slate-900">₹{payment.amount?.toLocaleString()}</td>
                         <td className="px-4 py-3 text-sm font-mono text-slate-600">{payment.utr_number || '-'}</td>
