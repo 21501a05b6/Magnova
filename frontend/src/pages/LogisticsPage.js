@@ -370,51 +370,25 @@ export const LogisticsPage = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-slate-700">Pickup Location *</Label>
-                        <Select value={formData.from_location} onValueChange={(value) => setFormData({ ...formData, from_location: value })} required>
-                          <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="Select pickup location" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white">
-                            {allLocations.length > 0 ? (
-                              allLocations.map((loc) => (
-                                <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                              ))
-                            ) : (
-                              <>
-                                <SelectItem value="Mumbai">Mumbai</SelectItem>
-                                <SelectItem value="Delhi">Delhi</SelectItem>
-                                <SelectItem value="Bangalore">Bangalore</SelectItem>
-                                <SelectItem value="Chennai">Chennai</SelectItem>
-                                <SelectItem value="Hyderabad">Hyderabad</SelectItem>
-                                <SelectItem value="Vijayawada">Vijayawada</SelectItem>
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          value={formData.from_location}
+                          onChange={(e) => setFormData({ ...formData, from_location: e.target.value })}
+                          required
+                          className="bg-white text-slate-900"
+                          placeholder="Enter pickup location"
+                          data-testid="pickup-location-input"
+                        />
                       </div>
                       <div>
                         <Label className="text-slate-700">To Location *</Label>
-                        <Select value={formData.to_location} onValueChange={(value) => setFormData({ ...formData, to_location: value })} required>
-                          <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="Select destination" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white">
-                            {allLocations.length > 0 ? (
-                              allLocations.map((loc) => (
-                                <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                              ))
-                            ) : (
-                              <>
-                                <SelectItem value="Mumbai">Mumbai</SelectItem>
-                                <SelectItem value="Delhi">Delhi</SelectItem>
-                                <SelectItem value="Bangalore">Bangalore</SelectItem>
-                                <SelectItem value="Chennai">Chennai</SelectItem>
-                                <SelectItem value="Hyderabad">Hyderabad</SelectItem>
-                                <SelectItem value="Vijayawada">Vijayawada</SelectItem>
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          value={formData.to_location}
+                          onChange={(e) => setFormData({ ...formData, to_location: e.target.value })}
+                          required
+                          className="bg-white text-slate-900"
+                          placeholder="Enter destination"
+                          data-testid="to-location-input"
+                        />
                       </div>
                       <div>
                         <Label className="text-slate-700">Transporter Name *</Label>
