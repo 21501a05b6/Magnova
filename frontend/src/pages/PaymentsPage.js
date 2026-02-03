@@ -740,7 +740,6 @@ export const PaymentsPage = () => {
                 )}
               </DialogContent>
             </Dialog>
-          )}
         </div>
 
         {/* Internal Payments Section */}
