@@ -248,10 +248,14 @@ class Invoice(BaseModel):
     to_organization: str
     amount: float
     gst_amount: float
+    gst_percentage: Optional[float] = 18
     total_amount: float
     imei_list: List[str]
     invoice_date: datetime
     payment_status: str
+    description: Optional[str] = None
+    billing_address: Optional[str] = None
+    shipping_address: Optional[str] = None
     created_by: str
     created_at: datetime
 
@@ -262,8 +266,12 @@ class InvoiceCreate(BaseModel):
     to_organization: str
     amount: float
     gst_amount: float
-    imei_list: List[str]
+    gst_percentage: Optional[float] = 18
+    imei_list: List[str] = []
     invoice_date: datetime
+    description: Optional[str] = None
+    billing_address: Optional[str] = None
+    shipping_address: Optional[str] = None
 
 class SalesOrder(BaseModel):
     model_config = ConfigDict(extra="ignore")
