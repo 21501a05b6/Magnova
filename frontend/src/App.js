@@ -126,6 +126,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>
+      </DataRefreshProvider>
       <Toaster position="top-right" />
     </AuthProvider>
   );
