@@ -108,7 +108,7 @@ export const PaymentsPage = () => {
       toast.success('Internal payment recorded successfully');
       setDialogOpen(false);
       resetForms();
-      fetchPayments();
+      refreshAfterPaymentChange(); // Trigger refresh
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to record internal payment');
     }
@@ -125,7 +125,7 @@ export const PaymentsPage = () => {
       toast.success('External payment recorded successfully');
       setDialogOpen(false);
       resetForms();
-      fetchPayments();
+      refreshAfterPaymentChange(); // Trigger refresh
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to record external payment');
     }
@@ -136,7 +136,7 @@ export const PaymentsPage = () => {
     try {
       await api.delete(`/payments/${paymentId}`);
       toast.success('Payment deleted successfully');
-      fetchPayments();
+      refreshAfterPaymentChange(); // Trigger refresh
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to delete payment');
     }
