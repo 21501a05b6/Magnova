@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Layout } from '../components/Layout';
 import api from '../utils/api';
 import { Button } from '../components/ui/button';
@@ -7,32 +7,43 @@ import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Plus, FileText, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, FileText, Trash2, Printer, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const InvoicesPage = () => {
   const [invoices, setInvoices] = useState([]);
-  const [pos, setPOs] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [poLookup, setPOLookup] = useState(null);
-  const [lookupLoading, setLookupLoading] = useState(false);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const printRef = useRef(null);
   const { user } = useAuth();
   const isAdmin = user?.role === 'Admin';
   const [formData, setFormData] = useState({
-    invoice_type: '',
-    po_number: '',
-    from_organization: '',
+    from_organization: 'Nova Enterprises',
     to_organization: '',
     amount: '',
+    gst_percentage: '18',
     gst_amount: '',
     imei_list: '',
     invoice_date: new Date().toISOString().split('T')[0],
+    description: '',
+    billing_address: '',
+    shipping_address: '',
   });
 
   useEffect(() => {
     fetchInvoices();
-    fetchPOs();
   }, []);
+
+  // Auto-calculate GST when amount or percentage changes
+  useEffect(() => {
+    if (formData.amount && formData.gst_percentage) {
+      const amount = parseFloat(formData.amount) || 0;
+      const gstPercent = parseFloat(formData.gst_percentage) || 0;
+      const gstAmount = (amount * gstPercent) / 100;
+      setFormData(prev => ({ ...prev, gst_amount: gstAmount.toFixed(2) }));
+    }
+  }, [formData.amount, formData.gst_percentage]);
 
   const fetchInvoices = async () => {
     try {
@@ -43,91 +54,23 @@ export const InvoicesPage = () => {
     }
   };
 
-  const fetchPOs = async () => {
-    try {
-      const response = await api.get('/purchase-orders');
-      setPOs(response.data);
-    } catch (error) {
-      console.error('Error fetching POs:', error);
-    }
-  };
-
-  // Handle PO selection and auto-populate fields
-  const handlePOSelect = async (poNumber) => {
-    setFormData(prev => ({ ...prev, po_number: poNumber }));
-    setPOLookup(null);
-    setLookupLoading(true);
-
-    try {
-      // Find PO from loaded data
-      const po = pos.find(p => p.po_number === poNumber);
-      
-      if (po) {
-        setPOLookup(po);
-        
-        // Determine billing direction based on PO data
-        // PO from Magnova means billing is Nova → Magnova
-        const purchaseOffice = po.purchase_office || '';
-        let fromOrg = 'Nova';
-        let toOrg = 'Magnova';
-        let invoiceType = 'Nova to Magnova';
-        
-        // If PO is from Magnova office, billing goes Nova → Magnova
-        if (purchaseOffice.toLowerCase().includes('magnova')) {
-          fromOrg = 'Nova';
-          toOrg = 'Magnova';
-          invoiceType = 'Nova to Magnova';
-        }
-        
-        // Calculate total amount from PO
-        const totalAmount = po.total_value || 0;
-        const gstRate = 0.18; // 18% GST
-        const baseAmount = totalAmount / (1 + gstRate);
-        const gstAmount = totalAmount - baseAmount;
-        
-        // Get IMEI list from PO items
-        let imeiList = '';
-        if (po.items && po.items.length > 0) {
-          imeiList = po.items
-            .filter(item => item.imei)
-            .map(item => item.imei)
-            .join(', ');
-        }
-
-        setFormData(prev => ({
-          ...prev,
-          po_number: poNumber,
-          invoice_type: invoiceType,
-          from_organization: fromOrg,
-          to_organization: toOrg,
-          amount: baseAmount.toFixed(2),
-          gst_amount: gstAmount.toFixed(2),
-          imei_list: imeiList,
-        }));
-
-        toast.success(`PO found - Billing: ${fromOrg} → ${toOrg}`);
-      } else {
-        setPOLookup(null);
-        toast.error('PO not found');
-      }
-    } catch (error) {
-      console.error('PO lookup error:', error);
-      setPOLookup(null);
-    } finally {
-      setLookupLoading(false);
-    }
-  };
-
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const imeiArray = formData.imei_list.split(',').map(i => i.trim()).filter(i => i);
+      const imeiArray = formData.imei_list ? formData.imei_list.split(',').map(i => i.trim()).filter(i => i) : [];
       await api.post('/invoices', {
-        ...formData,
+        invoice_type: 'Store Invoice',
+        po_number: 'N/A',
+        from_organization: formData.from_organization,
+        to_organization: formData.to_organization,
         amount: parseFloat(formData.amount),
         gst_amount: parseFloat(formData.gst_amount),
+        gst_percentage: parseFloat(formData.gst_percentage),
         imei_list: imeiArray,
         invoice_date: new Date(formData.invoice_date).toISOString(),
+        description: formData.description,
+        billing_address: formData.billing_address,
+        shipping_address: formData.shipping_address,
       });
       toast.success('Invoice created successfully');
       setDialogOpen(false);
@@ -151,16 +94,89 @@ export const InvoicesPage = () => {
 
   const resetForm = () => {
     setFormData({
-      invoice_type: '',
-      po_number: '',
-      from_organization: '',
+      from_organization: 'Nova Enterprises',
       to_organization: '',
       amount: '',
+      gst_percentage: '18',
       gst_amount: '',
       imei_list: '',
       invoice_date: new Date().toISOString().split('T')[0],
+      description: '',
+      billing_address: '',
+      shipping_address: '',
     });
-    setPOLookup(null);
+  };
+
+  const openPrintDialog = (invoice) => {
+    setSelectedInvoice(invoice);
+    setPrintDialogOpen(true);
+  };
+
+  const handlePrint = () => {
+    const printContent = printRef.current;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Invoice - ${selectedInvoice?.invoice_number}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; }
+            .invoice-container { max-width: 800px; margin: 0 auto; border: 2px solid #e5e7eb; padding: 30px; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #f97316; padding-bottom: 20px; margin-bottom: 20px; }
+            .company-info h1 { font-size: 28px; color: #1e3a5f; margin-bottom: 5px; }
+            .company-info p { font-size: 12px; color: #666; }
+            .invoice-title { text-align: right; }
+            .invoice-title h2 { font-size: 32px; color: #f97316; }
+            .invoice-title p { font-size: 14px; color: #666; margin-top: 5px; }
+            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+            .bill-to, .invoice-info { width: 48%; }
+            .bill-to h3, .invoice-info h3 { font-size: 14px; color: #f97316; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+            .bill-to p, .invoice-info p { font-size: 13px; line-height: 1.6; }
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            .items-table th { background: #1e3a5f; color: white; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; }
+            .items-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+            .items-table tr:nth-child(even) { background: #f9fafb; }
+            .totals { width: 300px; margin-left: auto; }
+            .totals-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+            .totals-row.total { border-top: 2px solid #1e3a5f; border-bottom: none; font-weight: bold; font-size: 18px; color: #1e3a5f; padding-top: 12px; }
+            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; }
+            .footer-left { width: 60%; }
+            .footer-right { width: 35%; text-align: center; }
+            .signature-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 10px; }
+            .terms { font-size: 11px; color: #666; line-height: 1.5; }
+            .terms h4 { color: #333; margin-bottom: 5px; }
+            @media print { body { padding: 0; } .invoice-container { border: none; } }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const numberToWords = (num) => {
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    
+    if (num === 0) return 'Zero';
+    if (num < 20) return ones[num];
+    if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + ones[num % 10] : '');
+    if (num < 1000) return ones[Math.floor(num / 100)] + ' Hundred' + (num % 100 ? ' ' + numberToWords(num % 100) : '');
+    if (num < 100000) return numberToWords(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 ? ' ' + numberToWords(num % 1000) : '');
+    if (num < 10000000) return numberToWords(Math.floor(num / 100000)) + ' Lakh' + (num % 100000 ? ' ' + numberToWords(num % 100000) : '');
+    return numberToWords(Math.floor(num / 10000000)) + ' Crore' + (num % 10000000 ? ' ' + numberToWords(num % 10000000) : '');
   };
 
   return (
@@ -169,7 +185,7 @@ export const InvoicesPage = () => {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Invoices</h1>
-            <p className="text-slate-600 mt-1">Manage invoicing across organizations</p>
+            <p className="text-slate-600 mt-1">Manage store invoices and billing</p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
@@ -181,78 +197,42 @@ export const InvoicesPage = () => {
             <DialogContent className="max-w-2xl bg-white">
               <DialogHeader>
                 <DialogTitle className="text-magnova-orange">Create Invoice</DialogTitle>
-                <DialogDescription className="text-slate-600">Generate new invoice - Select PO to auto-populate details</DialogDescription>
+                <DialogDescription className="text-slate-600">Generate new store invoice</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4" data-testid="invoice-form">
-                {/* PO Number Selection */}
-                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <Label className="text-slate-700 font-medium">PO Number *</Label>
-                  <div className="relative mt-1">
-                    <Select value={formData.po_number} onValueChange={handlePOSelect} required>
-                      <SelectTrigger className="bg-white" data-testid="po-select">
-                        <SelectValue placeholder="Select PO to auto-populate" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white max-h-60">
-                        {pos.map((po) => (
-                          <SelectItem key={po.po_number} value={po.po_number}>
-                            {po.po_number} - ₹{po.total_value?.toLocaleString()} ({po.purchase_office || 'N/A'})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {lookupLoading && (
-                      <div className="absolute right-10 top-1/2 -translate-y-1/2">
-                        <div className="animate-spin h-4 w-4 border-2 border-magnova-blue border-t-transparent rounded-full"></div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* PO Info Display */}
-                  {poLookup && (
-                    <div className="mt-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                      <div className="flex items-center gap-2 text-emerald-700 mb-2">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="font-medium">PO Details Loaded</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 text-sm">
-                        <div>
-                          <span className="text-slate-500">Office:</span>
-                          <span className="ml-1 font-medium">{poLookup.purchase_office || 'N/A'}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Total:</span>
-                          <span className="ml-1 font-medium">₹{poLookup.total_value?.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Items:</span>
-                          <span className="ml-1 font-medium">{poLookup.items?.length || 0}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Invoice Type - Auto-populated but editable */}
+                  {/* From Organization */}
                   <div>
-                    <Label className="text-slate-700">Invoice Type {poLookup ? '(Auto)' : '*'}</Label>
+                    <Label className="text-slate-700">From (Seller) *</Label>
                     <Select 
-                      value={formData.invoice_type} 
-                      onValueChange={(value) => setFormData({ ...formData, invoice_type: value })} 
+                      value={formData.from_organization} 
+                      onValueChange={(value) => setFormData({ ...formData, from_organization: value })} 
                       required
                     >
-                      <SelectTrigger className={poLookup ? 'bg-slate-100' : 'bg-white'} data-testid="invoice-type-select">
-                        <SelectValue placeholder="Select type" />
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select organization" />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
-                        <SelectItem value="Vendor">Vendor Invoice</SelectItem>
-                        <SelectItem value="Nova to Magnova">Nova to Magnova</SelectItem>
-                        <SelectItem value="Magnova to Export">Magnova to Export Agency</SelectItem>
+                        <SelectItem value="Nova Enterprises">Nova Enterprises</SelectItem>
+                        <SelectItem value="Magnova Exim Pvt. Ltd.">Magnova Exim Pvt. Ltd.</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {/* Invoice Date - Manual */}
+                  {/* To Organization - Editable */}
+                  <div>
+                    <Label className="text-slate-700">To (Buyer) *</Label>
+                    <Input
+                      value={formData.to_organization}
+                      onChange={(e) => setFormData({ ...formData, to_organization: e.target.value })}
+                      required
+                      placeholder="Enter buyer name / company"
+                      className="bg-white"
+                      data-testid="to-org-input"
+                    />
+                  </div>
+
+                  {/* Invoice Date */}
                   <div>
                     <Label className="text-slate-700">Invoice Date *</Label>
                     <Input
@@ -265,95 +245,98 @@ export const InvoicesPage = () => {
                     />
                   </div>
 
-                  {/* From Organization - Auto-populated */}
+                  {/* Description */}
                   <div>
-                    <Label className="text-slate-700">From Organization {poLookup ? '(Auto)' : '*'}</Label>
-                    <Select 
-                      value={formData.from_organization} 
-                      onValueChange={(value) => setFormData({ ...formData, from_organization: value })} 
-                      required
-                    >
-                      <SelectTrigger className={poLookup ? 'bg-slate-100' : 'bg-white'} data-testid="from-org-select">
-                        <SelectValue placeholder="Select organization" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="Nova">Nova Enterprises</SelectItem>
-                        <SelectItem value="Magnova">Magnova Exim Pvt. Ltd.</SelectItem>
-                        <SelectItem value="Vendor">Vendor</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-slate-700">Description / Item</Label>
+                    <Input
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="e.g., Mobile Phone, Accessories"
+                      className="bg-white"
+                    />
                   </div>
 
-                  {/* To Organization - Auto-populated */}
+                  {/* Amount */}
                   <div>
-                    <Label className="text-slate-700">To Organization {poLookup ? '(Auto)' : '*'}</Label>
-                    <Select 
-                      value={formData.to_organization} 
-                      onValueChange={(value) => setFormData({ ...formData, to_organization: value })} 
-                      required
-                    >
-                      <SelectTrigger className={poLookup ? 'bg-slate-100' : 'bg-white'} data-testid="to-org-select">
-                        <SelectValue placeholder="Select organization" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="Nova">Nova Enterprises</SelectItem>
-                        <SelectItem value="Magnova">Magnova Exim Pvt. Ltd.</SelectItem>
-                        <SelectItem value="Export Agency">Export Agency</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Amount - Auto-populated but editable */}
-                  <div>
-                    <Label className="text-slate-700">Amount (excl. GST) {poLookup ? '(Auto)' : '*'}</Label>
+                    <Label className="text-slate-700">Amount (Before GST) *</Label>
                     <Input
                       type="number"
                       step="0.01"
                       value={formData.amount}
                       onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                       required
-                      className={poLookup ? 'bg-slate-100' : 'bg-white'}
+                      placeholder="Enter base amount"
+                      className="bg-white"
                       data-testid="amount-input"
                     />
                   </div>
 
-                  {/* GST Amount - Auto-populated but editable */}
+                  {/* GST Percentage */}
                   <div>
-                    <Label className="text-slate-700">GST Amount {poLookup ? '(Auto)' : '*'}</Label>
+                    <Label className="text-slate-700">GST Percentage *</Label>
+                    <Select 
+                      value={formData.gst_percentage} 
+                      onValueChange={(value) => setFormData({ ...formData, gst_percentage: value })} 
+                      required
+                    >
+                      <SelectTrigger className="bg-white" data-testid="gst-percent-select">
+                        <SelectValue placeholder="Select GST %" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white">
+                        <SelectItem value="5">5% GST</SelectItem>
+                        <SelectItem value="12">12% GST</SelectItem>
+                        <SelectItem value="18">18% GST</SelectItem>
+                        <SelectItem value="28">28% GST</SelectItem>
+                        <SelectItem value="0">0% (Exempt)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* GST Amount - Auto-calculated */}
+                  <div>
+                    <Label className="text-slate-700">GST Amount (Auto)</Label>
                     <Input
                       type="number"
                       step="0.01"
                       value={formData.gst_amount}
-                      onChange={(e) => setFormData({ ...formData, gst_amount: e.target.value })}
-                      required
-                      className={poLookup ? 'bg-slate-100' : 'bg-white'}
+                      readOnly
+                      className="bg-slate-100 font-medium"
                       data-testid="gst-input"
                     />
                   </div>
 
                   {/* Total Display */}
-                  {(formData.amount && formData.gst_amount) && (
-                    <div className="col-span-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-600">Total Amount:</span>
-                        <span className="text-xl font-bold text-magnova-blue">
-                          ₹{(parseFloat(formData.amount || 0) + parseFloat(formData.gst_amount || 0)).toLocaleString()}
-                        </span>
-                      </div>
+                  <div className="flex items-end">
+                    <div className="w-full p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                      <span className="text-slate-600 text-sm">Total Amount:</span>
+                      <span className="ml-2 text-xl font-bold text-emerald-700">
+                        ₹{(parseFloat(formData.amount || 0) + parseFloat(formData.gst_amount || 0)).toLocaleString()}
+                      </span>
                     </div>
-                  )}
+                  </div>
 
-                  {/* IMEI List - Auto-populated but editable */}
+                  {/* Billing Address */}
                   <div className="col-span-2">
-                    <Label className="text-slate-700">IMEI List (comma-separated) {poLookup ? '(Auto)' : ''}</Label>
+                    <Label className="text-slate-700">Billing Address</Label>
+                    <Input
+                      value={formData.billing_address}
+                      onChange={(e) => setFormData({ ...formData, billing_address: e.target.value })}
+                      placeholder="Enter billing address"
+                      className="bg-white"
+                    />
+                  </div>
+
+                  {/* IMEI List */}
+                  <div className="col-span-2">
+                    <Label className="text-slate-700">IMEI List (comma-separated)</Label>
                     <Input
                       value={formData.imei_list}
                       onChange={(e) => setFormData({ ...formData, imei_list: e.target.value })}
                       placeholder="356789012345678, 356789012345679"
-                      className={`font-mono ${poLookup && formData.imei_list ? 'bg-slate-100' : 'bg-white'}`}
+                      className="font-mono bg-white"
                       data-testid="imei-list-input"
                     />
-                    <p className="text-xs text-slate-500 mt-1">Optional - Enter IMEIs included in this invoice</p>
+                    <p className="text-xs text-slate-500 mt-1">Optional - Enter IMEIs for device sales</p>
                   </div>
                 </div>
 
@@ -371,20 +354,19 @@ export const InvoicesPage = () => {
               <thead>
                 <tr className="bg-magnova-orange text-white">
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Invoice No.</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">PO Number</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">From → To</th>
                   <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Amount</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">GST</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">GST %</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">GST Amt</th>
                   <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Total</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
-                  {isAdmin && <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>}
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {invoices.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 9 : 8} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
                       <FileText className="w-12 h-12 mx-auto mb-2 text-slate-300" />
                       No invoices found
                     </td>
@@ -392,24 +374,32 @@ export const InvoicesPage = () => {
                 ) : (
                   invoices.map((invoice) => (
                     <tr key={invoice.invoice_id} className="table-row border-b border-slate-100 hover:bg-slate-50" data-testid="invoice-row">
-                      <td className="px-4 py-3 text-sm font-mono font-medium text-slate-900">{invoice.invoice_number}</td>
                       <td className="px-4 py-3 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          invoice.invoice_type === 'Nova to Magnova' ? 'bg-blue-100 text-blue-700' :
-                          invoice.invoice_type === 'Magnova to Export' ? 'bg-purple-100 text-purple-700' :
-                          'bg-slate-100 text-slate-700'
-                        }`}>
-                          {invoice.invoice_type}
-                        </span>
+                        <button
+                          onClick={() => openPrintDialog(invoice)}
+                          className="font-mono font-medium text-magnova-blue hover:text-magnova-dark-blue hover:underline"
+                          data-testid="view-invoice-button"
+                        >
+                          {invoice.invoice_number}
+                        </button>
                       </td>
-                      <td className="px-4 py-3 text-sm font-mono text-magnova-blue">{invoice.po_number}</td>
                       <td className="px-4 py-3 text-sm text-slate-600">{invoice.from_organization} → {invoice.to_organization}</td>
                       <td className="px-4 py-3 text-sm text-right text-slate-900">₹{invoice.amount?.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-sm text-right text-slate-600">{invoice.gst_percentage || 18}%</td>
                       <td className="px-4 py-3 text-sm text-right text-slate-600">₹{invoice.gst_amount?.toLocaleString()}</td>
                       <td className="px-4 py-3 text-sm text-right font-medium text-slate-900">₹{invoice.total_amount?.toLocaleString()}</td>
                       <td className="px-4 py-3 text-sm text-slate-600">{new Date(invoice.invoice_date).toLocaleDateString()}</td>
-                      {isAdmin && (
-                        <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-3 text-sm space-x-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openPrintDialog(invoice)}
+                          className="text-magnova-blue hover:text-magnova-dark-blue h-8 w-8 p-0"
+                          data-testid="print-invoice-button"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </Button>
+                        {isAdmin && (
                           <Button
                             size="sm"
                             variant="ghost"
@@ -419,8 +409,8 @@ export const InvoicesPage = () => {
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
-                        </td>
-                      )}
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -428,6 +418,150 @@ export const InvoicesPage = () => {
             </table>
           </div>
         </div>
+
+        {/* Print Invoice Dialog */}
+        <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+          <DialogContent className="max-w-4xl bg-white max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span className="text-magnova-blue">Invoice Preview</span>
+                <div className="flex gap-2">
+                  <Button onClick={handlePrint} className="bg-magnova-orange hover:bg-orange-600">
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print Invoice
+                  </Button>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedInvoice && (
+              <div ref={printRef} className="bg-white p-6">
+                <div className="invoice-container border-2 border-slate-200 p-8 rounded-lg">
+                  {/* Header */}
+                  <div className="flex justify-between items-start border-b-4 border-magnova-orange pb-6 mb-6">
+                    <div className="company-info">
+                      <h1 className="text-3xl font-black text-magnova-blue">{selectedInvoice.from_organization}</h1>
+                      <p className="text-slate-600 mt-1">Mobile & Electronics Store</p>
+                      <p className="text-slate-500 text-sm mt-2">GST No: 29AABCU9603R1ZM</p>
+                      <p className="text-slate-500 text-sm">Phone: +91 98765 43210</p>
+                    </div>
+                    <div className="text-right">
+                      <h2 className="text-4xl font-black text-magnova-orange">INVOICE</h2>
+                      <p className="text-slate-600 mt-2 font-mono text-lg">{selectedInvoice.invoice_number}</p>
+                      <p className="text-slate-500 text-sm mt-1">Date: {formatDate(selectedInvoice.invoice_date)}</p>
+                    </div>
+                  </div>
+
+                  {/* Bill To */}
+                  <div className="grid grid-cols-2 gap-8 mb-8">
+                    <div>
+                      <h3 className="text-sm font-bold text-magnova-orange uppercase tracking-wider border-b border-slate-200 pb-2 mb-3">Bill To</h3>
+                      <p className="text-lg font-semibold text-slate-900">{selectedInvoice.to_organization}</p>
+                      <p className="text-slate-600 text-sm mt-1">{selectedInvoice.billing_address || 'Address not provided'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-magnova-orange uppercase tracking-wider border-b border-slate-200 pb-2 mb-3">Invoice Details</h3>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Invoice No:</span>
+                          <span className="font-mono font-medium">{selectedInvoice.invoice_number}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Invoice Date:</span>
+                          <span className="font-medium">{formatDate(selectedInvoice.invoice_date)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Payment Terms:</span>
+                          <span className="font-medium">Due on Receipt</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Items Table */}
+                  <table className="w-full mb-6">
+                    <thead>
+                      <tr className="bg-magnova-blue text-white">
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">S.No</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">Description</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium uppercase">HSN</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium uppercase">Qty</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium uppercase">Rate</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium uppercase">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-slate-200">
+                        <td className="px-4 py-4 text-sm">1</td>
+                        <td className="px-4 py-4 text-sm">
+                          <p className="font-medium">{selectedInvoice.description || 'Goods/Services'}</p>
+                          {selectedInvoice.imei_list && selectedInvoice.imei_list.length > 0 && (
+                            <p className="text-xs text-slate-500 mt-1 font-mono">
+                              IMEI: {selectedInvoice.imei_list.join(', ')}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-center">8517</td>
+                        <td className="px-4 py-4 text-sm text-center">1</td>
+                        <td className="px-4 py-4 text-sm text-right">₹{selectedInvoice.amount?.toLocaleString()}</td>
+                        <td className="px-4 py-4 text-sm text-right font-medium">₹{selectedInvoice.amount?.toLocaleString()}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  {/* Totals */}
+                  <div className="flex justify-end mb-8">
+                    <div className="w-80">
+                      <div className="flex justify-between py-2 border-b border-slate-200">
+                        <span className="text-slate-600">Subtotal:</span>
+                        <span className="font-medium">₹{selectedInvoice.amount?.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-slate-200">
+                        <span className="text-slate-600">CGST ({(selectedInvoice.gst_percentage || 18) / 2}%):</span>
+                        <span className="font-medium">₹{(selectedInvoice.gst_amount / 2)?.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-slate-200">
+                        <span className="text-slate-600">SGST ({(selectedInvoice.gst_percentage || 18) / 2}%):</span>
+                        <span className="font-medium">₹{(selectedInvoice.gst_amount / 2)?.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between py-3 bg-magnova-blue text-white px-3 rounded mt-2">
+                        <span className="font-bold">TOTAL:</span>
+                        <span className="font-bold text-lg">₹{selectedInvoice.total_amount?.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Amount in Words */}
+                  <div className="bg-slate-50 p-4 rounded-lg mb-8">
+                    <p className="text-sm text-slate-600">
+                      <span className="font-medium">Amount in Words:</span>{' '}
+                      <span className="italic">Rupees {numberToWords(Math.floor(selectedInvoice.total_amount || 0))} Only</span>
+                    </p>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="grid grid-cols-2 gap-8 pt-6 border-t border-slate-200">
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-700 mb-2">Terms & Conditions:</h4>
+                      <ul className="text-xs text-slate-500 space-y-1">
+                        <li>• Goods once sold will not be taken back or exchanged.</li>
+                        <li>• Warranty as per manufacturer terms.</li>
+                        <li>• Subject to local jurisdiction only.</li>
+                        <li>• E. & O.E.</li>
+                      </ul>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-slate-700 mb-16">For {selectedInvoice.from_organization}</p>
+                      <div className="border-t border-slate-400 pt-2 inline-block px-8">
+                        <p className="text-sm text-slate-600">Authorized Signatory</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
