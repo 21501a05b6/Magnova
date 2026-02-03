@@ -101,7 +101,7 @@ export const PurchaseOrdersPage = () => {
       toast.success(`PO ${action}d successfully`);
       setApprovalDialog({ open: false, po: null });
       setRejectionReason('');
-      fetchPOs();
+      refreshAfterPOChange(); // Trigger refresh across all related modules
     } catch (error) {
       toast.error(error.response?.data?.detail || `Failed to ${action} PO`);
     }
@@ -128,7 +128,7 @@ export const PurchaseOrdersPage = () => {
       
       const response = await api.delete(`/purchase-orders/${poNumber}`);
       toast.success(response.data.message || 'Purchase order and all related data deleted');
-      fetchPOs();
+      triggerGlobalRefresh(); // Trigger GLOBAL refresh - all modules need to update
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to delete PO');
     }
