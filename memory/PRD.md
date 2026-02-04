@@ -67,6 +67,18 @@ The system must provide end-to-end visibility from Purchase Order to Sales, with
 - **Status Update**: Edit button to update status (**In Transit, Delivered, Cancelled** - "Pending" removed)
 - **Table Columns**: PO Number, Vendor, Brand/Model, Transporter, Vehicle, Route, Qty, Status, Pickup Date, Actions
 
+### ✅ Payments Page (Complete - Updated Feb 4, 2025)
+- **Admin-Only Access**: Payments page restricted to Admin role users
+- **Internal Payments Section** (Magnova → Nova):
+  - Create internal payment with PO auto-populate
+  - Fields: PO Number, Payee Name, Account, Bank, Amount, Mode, UTR, Date
+- **External Payments Section** (Nova → Vendor/CC):
+  - **Payee Type**: Vendor or Credit Card (CC)
+  - **Conditional Fields**: When "CC" is selected, shows "Payee Phone Number" field
+  - Fields: PO Number, Payee Type, Payee Name, **Payee Phone** (CC only), Account/Card#, IFSC/Bank, Location, Amount, Mode, UTR, Date
+- **External Payments Table**: Includes **Phone** column showing phone numbers for CC payments
+- **Notification Workflow**: Internal payment → External payment → Procurement notifications
+
 ### ✅ UI/UX & Branding (Complete)
 - Magnova Blue (#1e3a5f) & Orange (#f97316) color scheme
 - Professional sidebar navigation
