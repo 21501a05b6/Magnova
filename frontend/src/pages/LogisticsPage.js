@@ -644,7 +644,6 @@ export const LogisticsPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-white">
-                    <SelectItem value="Pending">Pending</SelectItem>
                     <SelectItem value="In Transit">In Transit</SelectItem>
                     <SelectItem value="Delivered">Delivered</SelectItem>
                     <SelectItem value="Cancelled">Cancelled</SelectItem>
