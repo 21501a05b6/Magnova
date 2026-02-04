@@ -43,15 +43,30 @@ export const InvoicesPage = () => {
     fetchInvoices();
   }, [refreshTimestamps.invoices]);
 
-  // Auto-calculate GST when amount or percentage changes
+  // Auto-calculate base price and GST when selling price or percentage changes
   useEffect(() => {
-    if (formData.amount && formData.gst_percentage) {
-      const amount = parseFloat(formData.amount) || 0;
+    if (formData.selling_price && formData.gst_percentage) {
+      const sellingPrice = parseFloat(formData.selling_price) || 0;
       const gstPercent = parseFloat(formData.gst_percentage) || 0;
-      const gstAmount = (amount * gstPercent) / 100;
-      setFormData(prev => ({ ...prev, gst_amount: gstAmount.toFixed(2) }));
+      
+      // Calculate base price (excluding GST) from selling price (including GST)
+      // Formula: Base Price = Selling Price / (1 + GST%/100)
+      const basePrice = sellingPrice / (1 + gstPercent / 100);
+      const gstAmount = sellingPrice - basePrice;
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        base_price: basePrice.toFixed(2),
+        gst_amount: gstAmount.toFixed(2) 
+      }));
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        base_price: '',
+        gst_amount: '' 
+      }));
     }
-  }, [formData.amount, formData.gst_percentage]);
+  }, [formData.selling_price, formData.gst_percentage]);
 
   const fetchInvoices = async () => {
     try {
