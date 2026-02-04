@@ -1413,6 +1413,31 @@ async def delete_purchase_order(po_number: str, current_user: User = Depends(get
         "deleted_counts": deleted_counts
     }
 
+@api_router.delete("/admin/clear-all-data")
+async def clear_all_data(current_user: User = Depends(get_current_user)):
+    """Clear all transactional data while preserving user accounts"""
+    if current_user.role != "Admin":
+        raise HTTPException(status_code=403, detail="Only Admin can clear data")
+    
+    deleted_counts = {}
+    
+    # Delete all transactional data
+    deleted_counts["purchase_orders"] = (await db.purchase_orders.delete_many({})).deleted_count
+    deleted_counts["procurement"] = (await db.procurement.delete_many({})).deleted_count
+    deleted_counts["payments"] = (await db.payments.delete_many({})).deleted_count
+    deleted_counts["logistics_shipments"] = (await db.logistics_shipments.delete_many({})).deleted_count
+    deleted_counts["imei_inventory"] = (await db.imei_inventory.delete_many({})).deleted_count
+    deleted_counts["invoices"] = (await db.invoices.delete_many({})).deleted_count
+    deleted_counts["audit_logs"] = (await db.audit_logs.delete_many({})).deleted_count
+    
+    await create_audit_log("CLEAR_ALL_DATA", "System", "all", current_user, deleted_counts)
+    
+    return {
+        "message": "All transactional data cleared successfully. User accounts preserved.",
+        "deleted_counts": deleted_counts
+    }
+
+
 @api_router.delete("/procurement/{procurement_id}")
 async def delete_procurement(procurement_id: str, current_user: User = Depends(get_current_user)):
     if current_user.role != "Admin":
