@@ -169,6 +169,7 @@ class ExternalPaymentCreate(BaseModel):
     po_number: str
     payee_type: str  # 'vendor' or 'cc'
     payee_name: str
+    payee_phone: Optional[str] = None  # Required when payee_type is 'cc'
     account_number: str
     ifsc_code: str
     location: str
