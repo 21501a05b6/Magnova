@@ -7,7 +7,7 @@ import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Scan, Search, Trash2, CheckCircle, AlertCircle, Bell, X, Package, FileText, MapPin, Smartphone, CheckCircle2 } from 'lucide-react';
+import { Scan, Search, Trash2, CheckCircle, AlertCircle, Bell, X, Package, FileText, MapPin, Smartphone, CheckCircle2, BarChart3, TrendingUp, Layers } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDataRefresh } from '../context/DataRefreshContext';
 
@@ -436,7 +436,7 @@ export const InventoryPage = () => {
   const chartData = useMemo(() => buildChartData(filteredInventory), [filteredInventory]);
 
   return (
-    <Layout>
+    <Layout pageTitle="IMEI Inventory" pageDescription="Track device inventory with IMEI-level visibility">
       <div data-testid="inventory-page">
         {/* Inventory Notifications Banner - Shipment Complete, Ready for Inventory */}
         {pendingInventory.length > 0 && (
@@ -493,37 +493,32 @@ export const InventoryPage = () => {
           </div>
         )}
 
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black text-neutral-900 tracking-tight">IMEI Inventory</h1>
-            <p className="text-neutral-600 mt-1">Track device inventory with IMEI-level visibility</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              className="border-teal-200 text-teal-700 hover:bg-teal-50"
-              onClick={() => setShowDashboard((prev) => !prev)}
-              data-testid="toggle-dashboard-button"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              {showDashboard ? 'Hide Dashboard' : 'Show Dashboard'}
-            </Button>
-            <Button
-              variant="outline"
-              className="border-teal-200 text-teal-700 hover:bg-teal-50"
-              onClick={() => setShowCharts((prev) => !prev)}
-              data-testid="toggle-charts-button"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              {showCharts ? 'Hide Charts' : 'Show Charts'}
-            </Button>
-            <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-              <DialogTrigger asChild>
-                <Button data-testid="scan-imei-button" className="bg-teal-600 hover:bg-teal-700 text-white">
-                  <Scan className="w-4 h-4 mr-2" />
-                  Scan IMEI
-                </Button>
-              </DialogTrigger>
+        <div className="flex items-center justify-end gap-3 mb-6">
+          <Button
+            variant="outline"
+            className="border-teal-200 text-teal-700 hover:bg-teal-50"
+            onClick={() => setShowDashboard((prev) => !prev)}
+            data-testid="toggle-dashboard-button"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            {showDashboard ? 'Hide Dashboard' : 'Show Dashboard'}
+          </Button>
+          <Button
+            variant="outline"
+            className="border-teal-200 text-teal-700 hover:bg-teal-50"
+            onClick={() => setShowCharts((prev) => !prev)}
+            data-testid="toggle-charts-button"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            {showCharts ? 'Hide Charts' : 'Show Charts'}
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button data-testid="scan-imei-button" className="bg-teal-600 hover:bg-teal-700 text-white">
+                <Scan className="w-4 h-4 mr-2" />
+                Scan IMEI
+              </Button>
+            </DialogTrigger>
             <DialogContent className="bg-white max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-teal-600">Scan IMEI</DialogTitle>
@@ -764,224 +759,165 @@ export const InventoryPage = () => {
               </form>
             </DialogContent>
             </Dialog>
-          </div>
         </div>
 
         {showDashboard && (
-          <div className="mb-8 space-y-6" data-testid="inventory-dashboard">
-            {/* Stats Cards Row */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
-              <div>
-                <h2 className="text-2xl font-bold text-neutral-900 tracking-tight">Inventory Overview</h2>
-                <p className="text-sm text-neutral-600 mt-1">Real-time summary of inventory by status, location, and models</p>
-              </div>
-              <div className="flex-shrink-0 flex items-center gap-2 bg-gradient-to-r from-teal-50 to-cyan-50 px-4 py-2 rounded-lg border border-teal-200/60 shadow-sm">
-                <Package className="w-5 h-5 text-teal-600" />
-                <span className="text-sm font-semibold text-teal-700">Total: {filteredInventory.length} IMEIs</span>
+          <div className="mb-6 space-y-5" data-testid="inventory-dashboard">
+            {/* Simple Header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-neutral-900">Inventory Dashboard</h2>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-semibold text-neutral-700">Total: <span className="text-teal-600">{filteredInventory.length}</span></span>
+                <span className="text-neutral-300">|</span>
+                <span className="font-semibold text-neutral-700">Locations: <span className="text-cyan-600">{inventoryStats.locationCount}</span></span>
               </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white border border-teal-200/50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 bg-teal-50 rounded-lg">
-                    <Package className="w-6 h-6 text-teal-600" />
-                  </div>
-                  <span className="text-xs font-medium bg-teal-100 text-teal-700 px-2.5 py-1 rounded-full">Total</span>
-                </div>
-                <p className="text-4xl font-bold text-neutral-900 mb-1">{inventoryStats.total}</p>
-                <p className="text-sm text-neutral-600">Total IMEIs</p>
-              </div>
-              <div className="bg-white border border-cyan-200/50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 bg-cyan-50 rounded-lg">
-                    <MapPin className="w-6 h-6 text-cyan-600" />
-                  </div>
-                  <span className="text-xs font-medium bg-cyan-100 text-cyan-700 px-2.5 py-1 rounded-full">Locations</span>
-                </div>
-                <p className="text-4xl font-bold text-neutral-900 mb-1">{inventoryStats.locationCount}</p>
-                <p className="text-sm text-neutral-600">Active Locations</p>
-              </div>
-              <div className="bg-white border border-violet-200/50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 bg-violet-50 rounded-lg">
-                    <Smartphone className="w-6 h-6 text-violet-600" />
-                  </div>
-                  <span className="text-xs font-medium bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full">Models</span>
-                </div>
-                <p className="text-4xl font-bold text-neutral-900 mb-1">{inventoryStats.topModels.length}</p>
-                <p className="text-sm text-neutral-600">Unique Models</p>
-              </div>
-              <div className="bg-white border border-amber-200/50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 bg-amber-50 rounded-lg">
-                    <CheckCircle2 className="w-6 h-6 text-amber-600" />
-                  </div>
-                  <span className="text-xs font-medium bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">Status</span>
-                </div>
-                <p className="text-4xl font-bold text-neutral-900 mb-1">{inventoryStats.statusCount}</p>
-                <p className="text-sm text-neutral-600">Status Types</p>
-              </div>
-            </div>
-
-            {/* Charts and Tables Row */}
-            <div className="grid gap-6 lg:grid-cols-2 mb-8">
-              {/* Status Breakdown */}
-              <div className="bg-white rounded-lg border border-neutral-200/60 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                <div className="bg-gradient-to-r from-neutral-50 to-neutral-50 px-6 py-4 border-b border-neutral-200/60">
-                  <h3 className="font-semibold text-neutral-900 text-lg flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 bg-teal-500 rounded-full"></span>
-                    Status Breakdown
-                  </h3>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-3">
-                    {Object.entries(inventoryStats.byStatus).length === 0 ? (
-                      <p className="text-sm text-neutral-500 text-center py-4">No data available</p>
-                    ) : (
-                      Object.entries(inventoryStats.byStatus)
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([status, count], idx) => {
-                          const percentage = inventoryStats.total > 0 ? Math.round((count / inventoryStats.total) * 100) : 0;
-                          return (
-                            <div key={status} className="flex items-center gap-3">
-                              <div className="w-24 text-sm font-medium text-neutral-700 truncate">{status}</div>
-                              <div className="flex-1 h-6 bg-neutral-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full rounded-full transition-all duration-500"
-                                  style={{
-                                    width: `${percentage}%`,
-                                    backgroundColor: chartPalette[idx % chartPalette.length],
-                                  }}
-                                ></div>
-                              </div>
-                              <div className="w-16 text-sm text-neutral-600 text-right font-medium">{count}</div>
-                              <div className="w-10 text-xs text-neutral-400 text-right">{percentage}%</div>
-                            </div>
-                          );
-                        })
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Top Locations */}
-              <div className="bg-white rounded-lg border border-neutral-200/60 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                <div className="bg-gradient-to-r from-neutral-50 to-neutral-50 px-6 py-4 border-b border-neutral-200/60">
-                  <h3 className="font-semibold text-neutral-900 text-lg flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 bg-cyan-500 rounded-full"></span>
-                    Top Locations
-                  </h3>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-3">
-                    {inventoryStats.topLocations.length === 0 ? (
-                      <p className="text-sm text-neutral-500 text-center py-4">No data available</p>
-                    ) : (
-                      inventoryStats.topLocations.map(([location, count], idx) => {
-                        const percentage = inventoryStats.total > 0 ? Math.round((count / inventoryStats.total) * 100) : 0;
-                        return (
-                          <div key={location} className="flex items-center gap-3">
-                            <div className="w-8 h-8 flex items-center justify-center bg-cyan-50 text-cyan-600 rounded-lg text-sm font-bold">
-                              {idx + 1}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-medium text-neutral-800 truncate">{location}</span>
-                                <span className="text-sm text-neutral-600">{count}</span>
-                              </div>
-                              <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-cyan-500 rounded-full transition-all duration-500"
-                                  style={{ width: `${percentage}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Top Models */}
-            <div className="bg-white rounded-lg border border-neutral-200/60 shadow-sm hover:shadow-md transition-shadow overflow-hidden mb-8">
-              <div className="bg-gradient-to-r from-neutral-50 to-neutral-50 px-6 py-4 border-b border-neutral-200/60">
-                <h3 className="font-semibold text-neutral-900 text-lg flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-violet-500 rounded-full"></span>
-                  Top Models
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {inventoryStats.topModels.length === 0 ? (
-                    <p className="col-span-full text-sm text-neutral-500 text-center py-8">No data available</p>
-                  ) : (
-                    inventoryStats.topModels.map(([model, count], idx) => (
-                      <div
-                        key={model}
-                        className="bg-white border border-violet-200/60 rounded-lg p-4 text-center hover:shadow-md transition-all hover:border-violet-300"
-                      >
-                        <div className="bg-violet-50 rounded-lg p-3 mb-3 inline-block">
-                          <div className="text-2xl font-bold text-violet-600">{count}</div>
-                        </div>
-                        <div className="text-sm font-medium text-neutral-700 truncate" title={model}>{model}</div>
-                        <div className="text-xs text-violet-600 font-medium mt-2">Rank #{idx + 1}</div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Detailed Inventory List */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-neutral-900 text-lg">Complete Inventory List</h3>
-                <p className="text-sm text-neutral-600 mt-1">All items with location, model, storage, and color details</p>
-              </div>
-              <div className="bg-white rounded-lg border border-neutral-200/60 shadow-sm overflow-hidden">
-                {/* Table Header */}
-                <div className="grid grid-cols-5 gap-px bg-neutral-50 border-b border-neutral-200/60 sticky top-0">
-                  <div className="px-6 py-4 text-xs font-semibold text-neutral-700">Location</div>
-                  <div className="px-6 py-4 text-xs font-semibold text-neutral-700">Model</div>
-                  <div className="px-6 py-4 text-xs font-semibold text-neutral-700">Storage</div>
-                  <div className="px-6 py-4 text-xs font-semibold text-neutral-700">Colour</div>
-                  <div className="px-6 py-4 text-xs font-semibold text-neutral-700 text-right">Quantity</div>
-                </div>
-                {/* Table Body */}
-                <div className="divide-y divide-neutral-100 max-h-96 overflow-auto">
-                  {filteredInventory.length === 0 ? (
-                    <div className="px-6 py-8 text-center text-sm text-neutral-500">
-                      No inventory items found
+            {/* Compact Location Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {dashboardData.locations.map((locationEntry) => {
+                const models = Array.from(locationEntry.models.values());
+                return (
+                  <div
+                    key={locationEntry.location}
+                    className="bg-white border border-neutral-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                    data-testid={`dashboard-card-${locationEntry.location}`}
+                  >
+                    {/* Simple Header */}
+                    <div className="bg-teal-600 text-white px-3 py-2 flex items-center justify-between">
+                      <span className="font-semibold text-sm">{locationEntry.location}</span>
+                      <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-semibold">{locationEntry.total}</span>
                     </div>
-                  ) : (
-                    filteredInventory.map((item, idx) => (
-                      <div key={idx} className="grid grid-cols-5 gap-px hover:bg-neutral-50/50 transition-colors">
-                        <div className="px-6 py-4 text-sm font-medium text-neutral-900 truncate">
-                          {item.current_location || item.location || 'Unknown'}
-                        </div>
-                        <div className="px-6 py-4 text-sm text-neutral-700 truncate">
-                          {item.model || item.device_model || '-'}
-                        </div>
-                        <div className="px-6 py-4 text-sm text-neutral-700 truncate">
-                          {item.storage || '-'}
-                        </div>
-                        <div className="px-6 py-4 text-sm text-neutral-700 truncate">
-                          {item.colour || 'Unknown'}
-                        </div>
-                        <div className="px-6 py-4 text-sm font-semibold text-neutral-900 text-right">1</div>
-                      </div>
-                    ))
-                  )}
+
+                    {/* Compact Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-neutral-50 border-b border-neutral-200">
+                          <tr>
+                            <th className="px-2 py-1.5 text-left font-semibold text-neutral-600">Model</th>
+                            <th className="px-2 py-1.5 text-center font-semibold text-neutral-600">Storage</th>
+                            <th className="px-2 py-1.5 text-left font-semibold text-neutral-600">Colour</th>
+                            <th className="px-2 py-1.5 text-right font-semibold text-neutral-600">Qty</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100">
+                          {models.map((modelEntry) => {
+                            const rows = buildRows(modelEntry);
+                            return rows.map((row, rowIdx) => (
+                              <tr 
+                                key={`${modelEntry.model}-${rowIdx}`}
+                                className={row.isTotalRow ? 'bg-neutral-50 font-semibold' : ''}
+                              >
+                                {row.showModel && (
+                                  <td 
+                                    rowSpan={row.modelRowSpan} 
+                                    className="px-2 py-1.5 text-neutral-900 font-medium align-top border-r border-neutral-100"
+                                  >
+                                    {row.model}
+                                  </td>
+                                )}
+                                {row.showStorage && !row.isModelTotal && (
+                                  <td 
+                                    rowSpan={row.storageRowSpan} 
+                                    className="px-2 py-1.5 text-center text-neutral-700 align-top border-r border-neutral-100"
+                                  >
+                                    {row.storage}
+                                  </td>
+                                )}
+                                {row.isModelTotal && (
+                                  <td colSpan="2" className="px-2 py-1.5 text-center text-neutral-700 font-semibold border-r border-neutral-100">
+                                    Total
+                                  </td>
+                                )}
+                                {!row.isModelTotal && (
+                                  <td className="px-2 py-1.5 text-neutral-700">
+                                    {row.colour}
+                                  </td>
+                                )}
+                                <td className={`px-2 py-1.5 text-right ${row.isTotalRow ? 'text-neutral-900 font-bold' : 'text-neutral-700'}`}>
+                                  {row.qty}
+                                </td>
+                              </tr>
+                            ));
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Total Card - Simplified */}
+              {dashboardData.total && (
+                <div
+                  className="bg-white border border-teal-600 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                  data-testid="dashboard-card-Total"
+                >
+                  {/* Simple Header */}
+                  <div className="bg-teal-600 text-white px-3 py-2 flex items-center justify-between">
+                    <span className="font-semibold text-sm">Total</span>
+                    <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-semibold">{dashboardData.total.total}</span>
+                  </div>
+
+                  {/* Compact Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-neutral-50 border-b border-neutral-200">
+                        <tr>
+                          <th className="px-2 py-1.5 text-left font-semibold text-neutral-600">Model</th>
+                          <th className="px-2 py-1.5 text-center font-semibold text-neutral-600">Storage</th>
+                          <th className="px-2 py-1.5 text-left font-semibold text-neutral-600">Colour</th>
+                          <th className="px-2 py-1.5 text-right font-semibold text-neutral-600">Qty</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-100">
+                        {Array.from(dashboardData.total.models.values()).map((modelEntry) => {
+                          const rows = buildRows(modelEntry);
+                          return rows.map((row, rowIdx) => (
+                            <tr 
+                              key={`total-${modelEntry.model}-${rowIdx}`}
+                              className={row.isTotalRow ? 'bg-neutral-50 font-semibold' : ''}
+                            >
+                              {row.showModel && (
+                                <td 
+                                  rowSpan={row.modelRowSpan} 
+                                  className="px-2 py-1.5 text-neutral-900 font-medium align-top border-r border-neutral-100"
+                                >
+                                  {row.model}
+                                </td>
+                              )}
+                              {row.showStorage && !row.isModelTotal && (
+                                <td 
+                                  rowSpan={row.storageRowSpan} 
+                                  className="px-2 py-1.5 text-center text-neutral-700 align-top border-r border-neutral-100"
+                                >
+                                  {row.storage}
+                                </td>
+                              )}
+                              {row.isModelTotal && (
+                                <td colSpan="2" className="px-2 py-1.5 text-center text-neutral-700 font-semibold border-r border-neutral-100">
+                                  Total
+                                </td>
+                              )}
+                              {!row.isModelTotal && (
+                                <td className="px-2 py-1.5 text-neutral-700">
+                                  {row.colour}
+                                </td>
+                              )}
+                              <td className={`px-2 py-1.5 text-right ${row.isTotalRow ? 'text-neutral-900 font-bold' : 'text-neutral-700'}`}>
+                                {row.qty}
+                              </td>
+                            </tr>
+                          ));
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Detailed Tables by Location - Old Card Layout - Hidden */}
+            {/* Old sections hidden */}
             <div className="space-y-4 hidden">
               <div>
                 <h3 className="font-semibold text-neutral-900 text-lg">Detailed Inventory by Location</h3>
@@ -1230,18 +1166,18 @@ export const InventoryPage = () => {
         )}
 
         <div className="mb-6 flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <div className="flex-1 relative max-w-xl">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
             <Input
               placeholder="Search by IMEI, model or brand..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white"
+              className="pl-10 w-full"
               data-testid="inventory-search"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48 bg-white" data-testid="status-filter">
+            <SelectTrigger className="w-56 bg-white" data-testid="status-filter">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-white">

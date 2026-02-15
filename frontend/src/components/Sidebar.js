@@ -49,15 +49,15 @@ export const Sidebar = () => {
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="mb-4 p-3 bg-gray-100 rounded-md">
-          <p className="text-xs text-gray-600">Logged in as</p>
-          <p className="text-sm font-medium text-gray-900 mt-1">{user?.name}</p>
-          <p className="text-xs text-gray-600">{user?.organization}</p>
-          <p className="text-xs text-teal-600">{user?.role}</p>
+      <div className="p-6">
+        <div className="mb-8 p-5 bg-gradient-to-br from-neutral-50 to-white rounded-lg border border-neutral-200 shadow-sm">
+          <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Logged in as</p>
+          <p className="text-base font-bold text-neutral-900 mt-2">{user?.name}</p>
+          <p className="text-sm text-neutral-600 mt-1.5 font-medium">{user?.organization}</p>
+          <p className="text-sm text-teal-600 font-bold mt-1.5">{user?.role}</p>
         </div>
 
-        <nav className="space-y-1">
+        <nav className="space-y-3">
           {filteredMenu.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -66,13 +66,13 @@ export const Sidebar = () => {
                 key={item.path}
                 to={item.path}
                 data-testid={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
-                className={`nav-item flex items-center px-3 py-2.5 rounded-md text-sm ${
+                className={`nav-item flex items-center px-5 py-3.5 rounded-lg text-lg font-bold transition-all duration-200 ${
                   isActive
-                    ? 'active text-gray-900 bg-teal-100'
-                    : 'text-gray-700 hover:text-gray-900'
+                    ? 'active text-teal-700 bg-teal-50 border-l-4 border-teal-600'
+                    : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50'
                 }`}
               >
-                <Icon className="w-4 h-4 mr-3" strokeWidth={1.5} />
+                <Icon className="w-6 h-6 mr-4" strokeWidth={2.5} />
                 {item.label}
               </Link>
             );
@@ -80,13 +80,13 @@ export const Sidebar = () => {
         </nav>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+      <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-neutral-200 bg-white">
         <button
           onClick={handleLogout}
           data-testid="logout-button"
-          className="flex items-center w-full px-3 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all duration-200"
+          className="flex items-center w-full px-5 py-3.5 text-lg font-bold text-neutral-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 border border-transparent hover:border-red-200"
         >
-          <LogOut className="w-4 h-4 mr-3" strokeWidth={1.5} />
+          <LogOut className="w-6 h-6 mr-4" strokeWidth={2.5} />
           Logout
         </button>
       </div>
