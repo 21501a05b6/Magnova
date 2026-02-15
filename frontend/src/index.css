@@ -14,6 +14,20 @@ body {
     background-color: #FAFAFA !important;
 }
 
+/* FORCE ALL INPUTS TO BE VISIBLE - GLOBAL OVERRIDE - Updated 2026-02-15 */
+input,
+textarea,
+select {
+    background-color: white !important;
+    color: #171717 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #A3A3A3 !important;
+    opacity: 1 !important;
+}
+
 /* Override browser autofill yellow */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
@@ -71,7 +85,12 @@ code {
     font-family: 'JetBrains Mono', source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-family: 'Chivo', sans-serif;
 }
 
@@ -113,16 +132,169 @@ h1, h2, h3, h4, h5, h6 {
     * {
         @apply border-border;
     }
+
     body {
         @apply bg-background text-foreground;
     }
+
     /* Force no yellow colors anywhere - use teal instead */
     * {
         accent-color: #14B8A6 !important;
     }
+
     /* Remove yellow highlight from all interactive elements */
-    a, button, input, select, textarea {
+    a,
+    button,
+    input,
+    select,
+    textarea {
         -webkit-tap-highlight-color: rgba(250, 250, 250, 0.5) !important;
+    }
+
+    /* Remove yellow from focus states - use teal */
+    button:focus,
+    button:focus-visible,
+    a:focus,
+    a:focus-visible,
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline-color: #14B8A6 !important;
+        box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2) !important;
+    }
+
+    /* Override focus-visible ring to use teal */
+    *:focus-visible {
+        outline-color: #14B8A6 !important;
+        --tw-ring-color: rgb(20 184 166) !important;
+    }
+
+    /* Remove yellow from hover states */
+    button:hover,
+    a:hover {
+        background-color: inherit;
+    }
+
+    /* Override any yellow backgrounds */
+    *[style*="background-color: yellow"],
+    *[style*="background: yellow"],
+    *[class*="yellow"],
+    *[class*="bg-yellow"] {
+        background-color: #F0FDFA !important;
+    }
+
+    /* Remove yellow from active states */
+    button:active,
+    a:active,
+    input:active,
+    select:active {
+        background-color: inherit !important;
+    }
+
+    /* Dropdown and select elements */
+    select:hover,
+    select:focus {
+        border-color: #14B8A6 !important;
+        outline-color: #14B8A6 !important;
+    }
+
+    /* Remove yellow from any highlighted text in inputs */
+    input::-webkit-input-placeholder,
+    textarea::-webkit-input-placeholder {
+        color: #A3A3A3 !important;
+    }
+
+    /* Specifically target outline buttons to use teal and ensure visibility */
+    button[class*="outline"] {
+        background-color: white !important;
+        color: #171717 !important;
+        border-color: #E5E5E5 !important;
+    }
+
+    button[class*="outline"]:hover,
+    button[class*="outline"]:focus {
+        background-color: #F0FDFA !important;
+        border-color: #14B8A6 !important;
+        color: #115E59 !important;
+    }
+
+    button[class*="outline"]:active {
+        background-color: #CCFBF1 !important;
+        border-color: #14B8A6 !important;
+        color: #115E59 !important;
+    }
+
+    /* Override any yellow/cyan colors in Radix UI components */
+    [data-state="open"],
+    [data-state="checked"],
+    [data-highlighted] {
+        background-color: #F0FDFA !important;
+        color: #115E59 !important;
+    }
+
+    /* Ensure dialog inputs and labels are always visible - ULTRA STRONG OVERRIDES */
+    [role="dialog"] input,
+    [role="dialog"] textarea,
+    [role="dialog"] select,
+    [role="dialog"] table input,
+    [role="dialog"] table textarea,
+    [role="dialog"] table select,
+    [role="dialog"] td input,
+    [role="dialog"] td textarea,
+    dialog input,
+    dialog textarea,
+    dialog select,
+    dialog table input,
+    dialog table textarea,
+    dialog table select,
+    dialog td input,
+    dialog td textarea {
+        background-color: white !important;
+        color: #171717 !important;
+        border: 1px solid #D4D4D4 !important;
+        font-size: 0.875rem !important;
+    }
+
+    [role="dialog"] label,
+    dialog label,
+    [role="dialog"] th,
+    dialog th {
+        color: #171717 !important;
+        font-weight: 500 !important;
+    }
+
+    [role="dialog"] input::placeholder,
+    [role="dialog"] textarea::placeholder,
+    [role="dialog"] table input::placeholder,
+    dialog input::placeholder,
+    dialog textarea::placeholder,
+    dialog table input::placeholder {
+        color: #A3A3A3 !important;
+        opacity: 1 !important;
+    }
+
+    /* Ensure select triggers are visible */
+    [role="dialog"] button[role="combobox"],
+    dialog button[role="combobox"] {
+        background-color: white !important;
+        color: #171717 !important;
+        border-color: #D4D4D4 !important;
+    }
+
+    /* Ensure table text in dialogs is visible */
+    [role="dialog"] table,
+    [role="dialog"] td,
+    [role="dialog"] th,
+    [role="dialog"] tbody,
+    [role="dialog"] thead,
+    [role="dialog"] tfoot,
+    dialog table,
+    dialog td,
+    dialog th,
+    dialog tbody,
+    dialog thead,
+    dialog tfoot {
+        color: #171717 !important;
     }
 }
 
@@ -131,7 +303,7 @@ h1, h2, h3, h4, h5, h6 {
         display: contents !important;
     }
 
-    [data-debug-wrapper="true"] > * {
+    [data-debug-wrapper="true"]>* {
         margin-left: inherit;
         margin-right: inherit;
         margin-top: inherit;
