@@ -163,8 +163,8 @@ export const DashboardPage = () => {
                     data-testid="quick-action-po"
                     className="flex items-center gap-3 p-3 hover:bg-neutral-50 rounded-lg border border-neutral-200 hover:border-neutral-300 transition-all duration-150 group"
                   >
-                    <div className="p-2.5 bg-teal-50 rounded-lg">
-                      <ShoppingCart className="w-4 h-4 text-neutral-600" />
+                    <div className="p-2.5 bg-neutral-100 rounded-lg">
+                      <ShoppingCart className="w-4 h-4 text-neutral-700" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-neutral-800">Create Purchase Order</p>
@@ -178,8 +178,8 @@ export const DashboardPage = () => {
                     data-testid="quick-action-procurement"
                     className="flex items-center gap-3 p-3 hover:bg-neutral-50 rounded-lg border border-neutral-200 hover:border-neutral-300 transition-all duration-150 group"
                   >
-                    <div className="p-2.5 bg-teal-50 rounded-lg">
-                      <Package className="w-4 h-4 text-neutral-600" />
+                    <div className="p-2.5 bg-neutral-100 rounded-lg">
+                      <Package className="w-4 h-4 text-neutral-700" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-neutral-800">Add Procurement</p>
@@ -192,8 +192,8 @@ export const DashboardPage = () => {
                   data-testid="quick-action-inventory"
                   className="flex items-center gap-3 p-3 hover:bg-neutral-50 rounded-lg border border-neutral-200 hover:border-neutral-300 transition-all duration-150 group"
                 >
-                  <div className="p-2.5 bg-teal-50 rounded-lg">
-                    <Boxes className="w-4 h-4 text-neutral-600" />
+                  <div className="p-2.5 bg-neutral-100 rounded-lg">
+                    <Boxes className="w-4 h-4 text-neutral-700" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-neutral-800">View Inventory</p>
@@ -205,8 +205,8 @@ export const DashboardPage = () => {
                   data-testid="quick-action-reports"
                   className="flex items-center gap-3 p-3 hover:bg-neutral-50 rounded-lg border border-neutral-200 hover:border-neutral-300 transition-all duration-150 group"
                 >
-                  <div className="p-2.5 bg-teal-50 rounded-lg">
-                    <CreditCard className="w-4 h-4 text-neutral-600" />
+                  <div className="p-2.5 bg-neutral-100 rounded-lg">
+                    <CreditCard className="w-4 h-4 text-neutral-700" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-neutral-800">Generate Reports</p>
@@ -249,20 +249,20 @@ export const DashboardPage = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-teal-50/50 rounded-lg border border-teal-200">
+                <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-300">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-teal-100 rounded-lg">
-                      <CheckCircle2 className="w-4 h-4 text-neutral-600" />
+                    <div className="p-2 bg-neutral-200 rounded-lg border border-neutral-300">
+                      <CheckCircle2 className="w-4 h-4 text-neutral-900" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold text-teal-500 uppercase tracking-wide">System Status</p>
-                      <p className="text-base font-bold text-teal-700">Operational</p>
+                      <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">System Status</p>
+                      <p className="text-base font-bold text-neutral-900">Operational</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse delay-75"></div>
-                    <div className="w-2 h-2 bg-teal-300 rounded-full animate-pulse delay-150"></div>
+                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-neutral-300 rounded-full animate-pulse delay-75"></div>
+                    <div className="w-2 h-2 bg-neutral-200 rounded-full animate-pulse delay-150"></div>
                   </div>
                 </div>
               </div>

@@ -219,11 +219,11 @@ export const InvoicesPage = () => {
       <div data-testid="invoices-page">
         {/* Invoice Notifications Banner - Inventory Complete, Ready for Invoice */}
         {pendingInvoices.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-teal-50 to-teal-50 border border-teal-200 rounded-lg p-4" data-testid="invoice-notifications">
+          <div className="mb-6 bg-neutral-50 border border-neutral-300 rounded-lg p-4" data-testid="invoice-notifications">
             <div className="flex items-center gap-2 mb-3">
               <Bell className="w-5 h-5 text-neutral-600 animate-pulse" />
-              <h3 className="font-semibold text-teal-800">Inventory Updated - Ready for Invoice</h3>
-              <span className="bg-teal-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingInvoices.length}</span>
+              <h3 className="font-semibold text-neutral-800">Inventory Updated - Ready for Invoice</h3>
+              <span className="bg-neutral-800 text-white text-xs px-2 py-0.5 rounded-full">{pendingInvoices.length}</span>
             </div>
             <div className="space-y-2">
               {pendingInvoices.map((notif, index) => (
@@ -234,7 +234,7 @@ export const InvoicesPage = () => {
                   data-testid="invoice-notification-item"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="bg-teal-100 p-2 rounded-lg">
+                    <div className="bg-neutral-100 p-2 rounded-lg border border-neutral-200">
                       <Receipt className="w-5 h-5 text-neutral-600" />
                     </div>
                     <div>
@@ -275,14 +275,14 @@ export const InvoicesPage = () => {
         <div className="mb-8 flex items-center justify-end">
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button data-testid="create-invoice-button" className="bg-teal-600 hover:bg-neutral-700 text-white">
+              <Button data-testid="create-invoice-button" className="bg-gray-900 hover:bg-gray-800 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Invoice
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl bg-white">
               <DialogHeader>
-                <DialogTitle className="text-neutral-600">Create Invoice</DialogTitle>
+                <DialogTitle className="text-neutral-900">Create Invoice</DialogTitle>
                 <DialogDescription className="text-neutral-600">Generate new store invoice</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4" data-testid="invoice-form">
@@ -295,56 +295,56 @@ export const InvoicesPage = () => {
                       onValueChange={(value) => setFormData({ ...formData, from_organization: value })} 
                       required
                     >
-                      <SelectTrigger className="bg-white">
+                      <SelectTrigger className="bg-white border-neutral-400 text-neutral-900 font-medium h-9">
                         <SelectValue placeholder="Select organization" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="Nova Enterprises">Nova Enterprises</SelectItem>
-                        <SelectItem value="Magnova Exim Pvt. Ltd.">Magnova Exim Pvt. Ltd.</SelectItem>
+                      <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
+                        <SelectItem value="Nova Enterprises" className="text-neutral-900">Nova Enterprises</SelectItem>
+                        <SelectItem value="Magnova Exim Pvt. Ltd." className="text-neutral-900">Magnova Exim Pvt. Ltd.</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* To Organization - Editable */}
                   <div>
-                    <Label className="text-neutral-700">To (Buyer) *</Label>
+                    <Label className="text-neutral-700 font-medium">To (Buyer) *</Label>
                     <Input
                       value={formData.to_organization}
                       onChange={(e) => setFormData({ ...formData, to_organization: e.target.value })}
                       required
                       placeholder="Enter buyer name / company"
-                      className="bg-white"
+                      className="bg-white text-neutral-900 border-neutral-400 h-9"
                       data-testid="to-org-input"
                     />
                   </div>
 
                   {/* Invoice Date */}
                   <div>
-                    <Label className="text-neutral-700">Invoice Date *</Label>
+                    <Label className="text-neutral-700 font-medium">Invoice Date *</Label>
                     <Input
                       type="date"
                       value={formData.invoice_date}
                       onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
                       required
-                      className="bg-white"
+                      className="bg-white text-neutral-900 border-neutral-400 h-9"
                       data-testid="date-input"
                     />
                   </div>
 
                   {/* Description */}
                   <div>
-                    <Label className="text-neutral-700">Description / Item</Label>
+                    <Label className="text-neutral-700 font-medium">Description / Item</Label>
                     <Input
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="e.g., Mobile Phone, Accessories"
-                      className="bg-white"
+                      className="bg-white text-neutral-900 border-neutral-400 h-9"
                     />
                   </div>
 
                   {/* Selling Price (Including GST) */}
                   <div>
-                    <Label className="text-neutral-700">Selling Price (Including GST) *</Label>
+                    <Label className="text-neutral-700 font-medium">Selling Price (Including GST) *</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -352,28 +352,28 @@ export const InvoicesPage = () => {
                       onChange={(e) => setFormData({ ...formData, selling_price: e.target.value })}
                       required
                       placeholder="Enter total selling price"
-                      className="bg-white"
+                      className="bg-white text-neutral-900 border-neutral-400 h-9"
                       data-testid="selling-price-input"
                     />
                   </div>
 
                   {/* GST Percentage */}
                   <div>
-                    <Label className="text-neutral-700">GST Percentage *</Label>
+                    <Label className="text-neutral-700 font-medium">GST Percentage *</Label>
                     <Select 
                       value={formData.gst_percentage} 
                       onValueChange={(value) => setFormData({ ...formData, gst_percentage: value })} 
                       required
                     >
-                      <SelectTrigger className="bg-white" data-testid="gst-percent-select">
+                      <SelectTrigger className="bg-white border-neutral-400 text-neutral-900 font-medium h-9" data-testid="gst-percent-select">
                         <SelectValue placeholder="Select GST %" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="5">5% GST</SelectItem>
-                        <SelectItem value="12">12% GST</SelectItem>
-                        <SelectItem value="18">18% GST</SelectItem>
-                        <SelectItem value="28">28% GST</SelectItem>
-                        <SelectItem value="0">0% (Exempt)</SelectItem>
+                      <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
+                        <SelectItem value="5" className="text-neutral-900">5% GST</SelectItem>
+                        <SelectItem value="12" className="text-neutral-900">12% GST</SelectItem>
+                        <SelectItem value="18" className="text-neutral-900">18% GST</SelectItem>
+                        <SelectItem value="28" className="text-neutral-900">28% GST</SelectItem>
+                        <SelectItem value="0" className="text-neutral-900">0% (Exempt)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -400,9 +400,9 @@ export const InvoicesPage = () => {
                         </div>
                         
                         {/* Total (Selling Price) */}
-                        <div className="bg-teal-50 p-3 rounded-lg border border-teal-200">
-                          <Label className="text-neutral-600 text-xs">Total (Incl. GST)</Label>
-                          <p className="text-lg font-bold text-teal-700" data-testid="total-price-display">
+                        <div className="bg-neutral-100 p-3 rounded-lg border border-neutral-300">
+                          <Label className="text-neutral-600 text-xs text-neutral-500">Total (Incl. GST)</Label>
+                          <p className="text-lg font-bold text-neutral-900" data-testid="total-price-display">
                             ₹{parseFloat(formData.selling_price).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                           </p>
                         </div>
@@ -412,30 +412,30 @@ export const InvoicesPage = () => {
 
                   {/* Billing Address */}
                   <div className="col-span-2">
-                    <Label className="text-neutral-700">Billing Address</Label>
+                    <Label className="text-neutral-700 font-medium">Billing Address</Label>
                     <Input
                       value={formData.billing_address}
                       onChange={(e) => setFormData({ ...formData, billing_address: e.target.value })}
                       placeholder="Enter billing address"
-                      className="bg-white"
+                      className="bg-white text-neutral-900 border-neutral-400 h-9"
                     />
                   </div>
 
                   {/* IMEI List */}
                   <div className="col-span-2">
-                    <Label className="text-neutral-700">IMEI List (comma-separated)</Label>
+                    <Label className="text-neutral-700 font-medium">IMEI List (comma-separated)</Label>
                     <Input
                       value={formData.imei_list}
                       onChange={(e) => setFormData({ ...formData, imei_list: e.target.value })}
                       placeholder="356789012345678, 356789012345679"
-                      className="font-mono bg-white"
+                      className="font-mono bg-white text-neutral-900 border-neutral-400 h-9"
                       data-testid="imei-list-input"
                     />
                     <p className="text-xs text-neutral-500 mt-1">Optional - Enter IMEIs for device sales</p>
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-teal-600 hover:bg-neutral-700 text-white" data-testid="submit-invoice">
+                <Button type="submit" className="w-full bg-gray-900 hover:bg-gray-800 text-white" data-testid="submit-invoice">
                   Create Invoice
                 </Button>
               </form>
@@ -447,7 +447,7 @@ export const InvoicesPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="invoices-table">
               <thead>
-                <tr className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
+                <tr className="text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Invoice No.</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">From → To</th>
                   <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Base Price</th>
@@ -482,7 +482,7 @@ export const InvoicesPage = () => {
                       <td className="px-4 py-3 text-sm text-right text-neutral-900">₹{invoice.amount?.toLocaleString()}</td>
                       <td className="px-4 py-3 text-sm text-right text-neutral-600">{invoice.gst_percentage || 18}%</td>
                       <td className="px-4 py-3 text-sm text-right text-neutral-600">₹{invoice.gst_amount?.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-sm text-right font-bold text-teal-700">₹{invoice.total_amount?.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-sm text-right font-bold text-neutral-900">₹{invoice.total_amount?.toLocaleString()}</td>
                       <td className="px-4 py-3 text-sm text-neutral-600">{new Date(invoice.invoice_date).toLocaleDateString()}</td>
                       <td className="px-4 py-3 text-sm space-x-1">
                         <Button
@@ -521,7 +521,7 @@ export const InvoicesPage = () => {
               <DialogTitle className="flex items-center justify-between">
                 <span className="text-neutral-900">Invoice Preview</span>
                 <div className="flex gap-2">
-                  <Button onClick={handlePrint} className="bg-teal-600 hover:bg-neutral-700 text-white">
+                  <Button onClick={handlePrint} className="bg-gray-900 hover:bg-gray-800 text-white">
                     <Printer className="w-4 h-4 mr-2" />
                     Print Invoice
                   </Button>
@@ -533,7 +533,7 @@ export const InvoicesPage = () => {
               <div ref={printRef} className="bg-white p-6">
                 <div className="invoice-container border-2 border-neutral-200 p-8 rounded-lg">
                   {/* Header */}
-                  <div className="flex justify-between items-start border-b-4 border-teal-600 pb-6 mb-6">
+                  <div className="flex justify-between items-start border-b-4 border-neutral-800 pb-6 mb-6">
                     <div className="company-info">
                       <h1 className="text-2xl font-black text-neutral-900">{selectedInvoice.from_organization}</h1>
                       <p className="text-neutral-600 mt-1">Mobile & Electronics Store</p>
@@ -541,7 +541,7 @@ export const InvoicesPage = () => {
                       <p className="text-neutral-500 text-sm">Phone: +91 98765 43210</p>
                     </div>
                     <div className="text-right">
-                      <h2 className="text-4xl font-black text-neutral-600">INVOICE</h2>
+                      <h2 className="text-4xl font-black text-neutral-400">INVOICE</h2>
                       <p className="text-neutral-600 mt-2 font-mono text-lg">{selectedInvoice.invoice_number}</p>
                       <p className="text-neutral-500 text-sm mt-1">Date: {formatDate(selectedInvoice.invoice_date)}</p>
                     </div>
@@ -576,7 +576,7 @@ export const InvoicesPage = () => {
                   {/* Items Table */}
                   <table className="w-full mb-6">
                     <thead>
-                      <tr className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
+                      <tr className="text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
                         <th className="px-4 py-3 text-left text-xs font-medium uppercase">S.No</th>
                         <th className="px-4 py-3 text-left text-xs font-medium uppercase">Description</th>
                         <th className="px-4 py-3 text-center text-xs font-medium uppercase">HSN</th>

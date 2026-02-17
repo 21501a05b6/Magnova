@@ -73,7 +73,6 @@ export const ProcurementPage = () => {
   const fetchPOs = async () => {
     try {
       const response = await api.get('/purchase-orders');
-      // Show ALL POs - not just approved ones
       setPOs(response.data);
     } catch (error) {
       console.error('Error fetching POs:', error);
@@ -211,11 +210,11 @@ export const ProcurementPage = () => {
       <div data-testid="procurement-page">
         {/* Procurement Notifications Banner - Payment Complete, Ready for Procurement */}
         {pendingProcurements.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded-lg p-4" data-testid="procurement-notifications">
+          <div className="mb-6 bg-neutral-50 border border-neutral-300 rounded-lg p-4" data-testid="procurement-notifications">
             <div className="flex items-center gap-2 mb-3">
-              <Bell className="w-5 h-5 text-purple-600 animate-pulse" />
-              <h3 className="font-semibold text-purple-800">Payments Complete - Ready for Procurement</h3>
-              <span className="bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingProcurements.length}</span>
+              <Bell className="w-5 h-5 text-neutral-600 animate-pulse" />
+              <h3 className="font-semibold text-neutral-800">Payments Complete - Ready for Procurement</h3>
+              <span className="bg-neutral-800 text-white text-xs px-2 py-0.5 rounded-full">{pendingProcurements.length}</span>
             </div>
             <div className="space-y-2">
               {pendingProcurements.map((notif, index) => (
@@ -225,8 +224,8 @@ export const ProcurementPage = () => {
                   onClick={() => handleNotificationClick(notif)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="bg-purple-100 p-2 rounded-lg">
-                      <Package className="w-5 h-5 text-purple-600" />
+                    <div className="bg-neutral-100 p-2 rounded-lg border border-neutral-200">
+                      <Package className="w-5 h-5 text-neutral-600" />
                     </div>
                     <div>
                       <div className="font-medium text-neutral-900">
@@ -242,7 +241,7 @@ export const ProcurementPage = () => {
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
-                      className="bg-purple-600 hover:bg-purple-700"
+                      className="bg-neutral-800 hover:bg-neutral-900"
                       onClick={(e) => { e.stopPropagation(); handleNotificationClick(notif); }}
                     >
                       <Package className="w-4 h-4 mr-1" />
@@ -283,15 +282,15 @@ export const ProcurementPage = () => {
                     <div>
                       <Label className="text-neutral-700 font-medium text-xs">PO Number *</Label>
                       <Select value={formData.po_number} onValueChange={handlePOSelect} required>
-                        <SelectTrigger data-testid="po-select" className="bg-white h-8 text-sm">
+                        <SelectTrigger data-testid="po-select" className="bg-white h-8 text-sm border-neutral-400 text-neutral-900 font-medium">
                           <SelectValue placeholder="Select PO" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white max-h-60">
+                        <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
                           {pos.length === 0 ? (
-                            <SelectItem value="none" disabled>No POs available</SelectItem>
+                            <SelectItem value="none" disabled className="text-neutral-500">No POs available</SelectItem>
                           ) : (
                             pos.map((po) => (
-                              <SelectItem key={po.po_number} value={po.po_number}>
+                              <SelectItem key={po.po_number} value={po.po_number} className="text-neutral-900 border-b border-neutral-50 last:border-0 hover:bg-neutral-50">
                                 {po.po_number} - {po.purchase_office} ({po.approval_status})
                               </SelectItem>
                             ))
@@ -303,12 +302,12 @@ export const ProcurementPage = () => {
                       <div>
                         <Label className="text-neutral-700 font-medium text-xs">Select Line Item *</Label>
                         <Select value={selectedItemIndex} onValueChange={handleItemSelect} required>
-                          <SelectTrigger className="bg-white h-8 text-sm">
+                          <SelectTrigger className="bg-white h-8 text-sm border-neutral-400 text-neutral-900 font-medium">
                             <SelectValue placeholder="Select item" />
                           </SelectTrigger>
-                          <SelectContent className="bg-white max-h-60">
+                          <SelectContent className="bg-white border-neutral-300 z-[100]">
                             {poItems.map((item, index) => (
-                              <SelectItem key={index} value={index.toString()}>
+                              <SelectItem key={index} value={index.toString()} className="text-neutral-900 border-b border-neutral-50 last:border-0">
                                 {item.vendor} - {item.brand} {item.model} (Qty: {item.qty})
                               </SelectItem>
                             ))}
@@ -378,7 +377,7 @@ export const ProcurementPage = () => {
                     <Input
                       value={formData.colour}
                       onChange={(e) => setFormData({ ...formData, colour: e.target.value })}
-                      className="bg-white text-neutral-900 h-8 text-sm"
+                      className="bg-white text-neutral-900 h-8 text-sm border-neutral-400"
                       placeholder="Enter colour"
                     />
                   </div>
@@ -402,7 +401,7 @@ export const ProcurementPage = () => {
                       value={formData.purchase_quantity}
                       onChange={(e) => setFormData({ ...formData, purchase_quantity: e.target.value })}
                       required
-                      className="bg-white text-neutral-900 h-8 text-sm"
+                      className="bg-white text-neutral-900 h-8 text-sm border-neutral-400"
                       placeholder="Enter purchase quantity"
                       min="1"
                     />
@@ -416,7 +415,7 @@ export const ProcurementPage = () => {
                       onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
                       required
                       data-testid="price-input"
-                      className="bg-white text-neutral-900 h-8 text-sm"
+                      className="bg-white text-neutral-900 h-8 text-sm border-neutral-400"
                       placeholder="Enter price"
                     />
                   </div>
@@ -426,7 +425,7 @@ export const ProcurementPage = () => {
                       value={formData.serial_number}
                       onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
                       data-testid="serial-input"
-                      className="font-mono bg-white text-neutral-900 h-8 text-sm"
+                      className="font-mono bg-white text-neutral-900 h-8 text-sm border-neutral-400"
                       placeholder="Enter serial number"
                     />
                   </div>
@@ -474,7 +473,7 @@ export const ProcurementPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="procurement-table">
               <thead>
-                <tr className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
+                <tr className="text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">PO Number</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Device Model</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Vendor</th>

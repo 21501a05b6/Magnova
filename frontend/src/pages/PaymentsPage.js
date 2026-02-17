@@ -295,11 +295,11 @@ export const PaymentsPage = () => {
       <div data-testid="payments-page">
         {/* Internal Payment Notifications Banner */}
         {pendingInternalPayments.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-teal-50 to-indigo-50 border border-teal-200 rounded-lg p-4" data-testid="internal-payment-notifications">
+          <div className="mb-6 bg-neutral-50 border border-neutral-300 rounded-lg p-4" data-testid="internal-payment-notifications">
             <div className="flex items-center gap-2 mb-3">
               <Bell className="w-5 h-5 text-neutral-600 animate-pulse" />
               <h3 className="font-semibold text-neutral-800">New PO Created - Internal Payment Required</h3>
-              <span className="bg-teal-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingInternalPayments.length}</span>
+              <span className="bg-neutral-800 text-white text-xs px-2 py-0.5 rounded-full">{pendingInternalPayments.length}</span>
             </div>
             <div className="space-y-2">
               {pendingInternalPayments.map((notif, index) => (
@@ -309,7 +309,7 @@ export const PaymentsPage = () => {
                   onClick={() => handleInternalNotificationClick(notif)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="bg-teal-100 p-2 rounded-lg">
+                    <div className="bg-neutral-100 p-2 rounded-lg border border-neutral-200">
                       <Banknote className="w-5 h-5 text-neutral-600" />
                     </div>
                     <div>
@@ -349,11 +349,11 @@ export const PaymentsPage = () => {
 
         {/* External Payment Notifications Banner */}
         {pendingExternalPayments.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-neutral-100 to-neutral-100 border border-neutral-300 rounded-lg p-4" data-testid="external-payment-notifications">
+          <div className="mb-6 bg-neutral-50 border border-neutral-300 rounded-lg p-4" data-testid="external-payment-notifications">
             <div className="flex items-center gap-2 mb-3">
               <Bell className="w-5 h-5 text-neutral-700 animate-pulse" />
               <h3 className="font-semibold text-neutral-900">Internal Payment Complete - External Payment Required</h3>
-              <span className="bg-neutral-1000 text-white text-xs px-2 py-0.5 rounded-full">{pendingExternalPayments.length}</span>
+              <span className="bg-neutral-800 text-white text-xs px-2 py-0.5 rounded-full">{pendingExternalPayments.length}</span>
             </div>
             <div className="space-y-2">
               {pendingExternalPayments.map((notif, index) => (
@@ -455,12 +455,12 @@ export const PaymentsPage = () => {
                       <div>
                         <Label className="text-neutral-700">PO Number *</Label>
                         <Select value={internalForm.po_number} onValueChange={handleInternalPOSelect} required>
-                          <SelectTrigger className="bg-white" data-testid="internal-po-select">
+                          <SelectTrigger className="bg-white border-neutral-400 text-neutral-900" data-testid="internal-po-select">
                             <SelectValue placeholder="Select PO" />
                           </SelectTrigger>
-                          <SelectContent className="bg-white max-h-60">
+                          <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
                             {pos.map((po) => (
-                              <SelectItem key={po.po_number} value={po.po_number}>
+                              <SelectItem key={po.po_number} value={po.po_number} className="text-neutral-900">
                                 {po.po_number} - ₹{po.total_value?.toLocaleString()}
                               </SelectItem>
                             ))}
@@ -481,7 +481,7 @@ export const PaymentsPage = () => {
                           value={internalForm.payee_account}
                           onChange={(e) => setInternalForm({ ...internalForm, payee_account: e.target.value })}
                           required
-                          className="bg-white font-mono"
+                          className="bg-white font-mono border-neutral-400 text-neutral-900"
                           placeholder="Auto-populated"
                           data-testid="payee-account-input"
                         />
@@ -492,7 +492,7 @@ export const PaymentsPage = () => {
                           value={internalForm.payee_bank}
                           onChange={(e) => setInternalForm({ ...internalForm, payee_bank: e.target.value })}
                           required
-                          className="bg-white"
+                          className="bg-white border-neutral-400 text-neutral-900"
                           placeholder="Auto-populated"
                           data-testid="payee-bank-input"
                         />
@@ -505,7 +505,7 @@ export const PaymentsPage = () => {
                           value={internalForm.amount}
                           onChange={(e) => setInternalForm({ ...internalForm, amount: e.target.value })}
                           required
-                          className="bg-white"
+                          className="bg-white border-neutral-400 text-neutral-900"
                           placeholder="Auto-populated from PO"
                           data-testid="internal-amount-input"
                         />
@@ -513,15 +513,15 @@ export const PaymentsPage = () => {
                       <div>
                         <Label className="text-neutral-700">Payment Mode *</Label>
                         <Select value={internalForm.payment_mode} onValueChange={(v) => setInternalForm({ ...internalForm, payment_mode: v })} required>
-                          <SelectTrigger className="bg-white" data-testid="internal-mode-select">
+                          <SelectTrigger className="bg-white border-neutral-400 text-neutral-900" data-testid="internal-mode-select">
                             <SelectValue placeholder="Select mode" />
                           </SelectTrigger>
-                          <SelectContent className="bg-white">
-                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                            <SelectItem value="UPI">UPI</SelectItem>
-                            <SelectItem value="RTGS">RTGS</SelectItem>
-                            <SelectItem value="NEFT">NEFT</SelectItem>
-                            <SelectItem value="Cheque">Cheque</SelectItem>
+                          <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
+                            <SelectItem value="Bank Transfer" className="text-neutral-900">Bank Transfer</SelectItem>
+                            <SelectItem value="UPI" className="text-neutral-900">UPI</SelectItem>
+                            <SelectItem value="RTGS" className="text-neutral-900">RTGS</SelectItem>
+                            <SelectItem value="NEFT" className="text-neutral-900">NEFT</SelectItem>
+                            <SelectItem value="Cheque" className="text-neutral-900">Cheque</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -530,7 +530,7 @@ export const PaymentsPage = () => {
                         <Input
                           value={internalForm.transaction_ref}
                           onChange={(e) => setInternalForm({ ...internalForm, transaction_ref: e.target.value })}
-                          className="bg-white font-mono"
+                          className="bg-white font-mono border-neutral-400 text-neutral-900"
                           data-testid="internal-ref-input"
                         />
                       </div>
@@ -541,7 +541,7 @@ export const PaymentsPage = () => {
                           value={internalForm.payment_date}
                           onChange={(e) => setInternalForm({ ...internalForm, payment_date: e.target.value })}
                           required
-                          className="bg-white"
+                          className="bg-white border-neutral-400 text-neutral-900"
                           data-testid="internal-date-input"
                         />
                       </div>
@@ -569,12 +569,12 @@ export const PaymentsPage = () => {
                       <div>
                         <Label className="text-neutral-700 font-medium">PO Number *</Label>
                         <Select value={externalForm.po_number} onValueChange={handleExternalPOSelect} required>
-                          <SelectTrigger className="bg-white" data-testid="external-po-select">
+                          <SelectTrigger className="bg-white border-neutral-400 text-neutral-900" data-testid="external-po-select">
                             <SelectValue placeholder="Select PO" />
                           </SelectTrigger>
-                          <SelectContent className="bg-white max-h-60">
+                          <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
                             {pos.map((po) => (
-                              <SelectItem key={po.po_number} value={po.po_number}>
+                              <SelectItem key={po.po_number} value={po.po_number} className="text-neutral-900">
                                 {po.po_number} - ₹{po.total_value?.toLocaleString()}
                               </SelectItem>
                             ))}
@@ -611,12 +611,12 @@ export const PaymentsPage = () => {
                       <div>
                         <Label className="text-neutral-700">Payee Type *</Label>
                         <Select value={externalForm.payee_type} onValueChange={(v) => setExternalForm({ ...externalForm, payee_type: v, account_number: '', ifsc_code: '', payee_phone: '' })} required>
-                          <SelectTrigger className="bg-white" data-testid="payee-type-select">
+                          <SelectTrigger className="bg-white border-neutral-400 text-neutral-900" data-testid="payee-type-select">
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
-                          <SelectContent className="bg-white">
-                            <SelectItem value="vendor">Vendor</SelectItem>
-                            <SelectItem value="cc">Credit Card (CC)</SelectItem>
+                          <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
+                             <SelectItem value="vendor" className="text-neutral-900">Vendor</SelectItem>
+                             <SelectItem value="cc" className="text-neutral-900">Credit Card (CC)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -626,7 +626,7 @@ export const PaymentsPage = () => {
                           value={externalForm.payee_name}
                           onChange={(e) => setExternalForm({ ...externalForm, payee_name: e.target.value })}
                           required
-                          className="bg-white"
+                          className="bg-white border-neutral-400 text-neutral-900"
                           placeholder={externalForm.payee_type === 'cc' ? "Credit card holder name" : "Vendor name"}
                           data-testid="external-payee-name-input"
                         />
@@ -640,7 +640,7 @@ export const PaymentsPage = () => {
                             value={externalForm.payee_phone}
                             onChange={(e) => setExternalForm({ ...externalForm, payee_phone: e.target.value })}
                             required
-                            className="bg-white"
+                            className="bg-white border-neutral-400 text-neutral-900"
                             placeholder="Enter phone number"
                             data-testid="payee-phone-input"
                           />
@@ -657,7 +657,7 @@ export const PaymentsPage = () => {
                               value={externalForm.account_number}
                               onChange={(e) => setExternalForm({ ...externalForm, account_number: e.target.value })}
                               required
-                              className="bg-white font-mono"
+                              className="bg-white font-mono border-neutral-400 text-neutral-900"
                               placeholder="XXXX-XXXX-XXXX-XXXX"
                               data-testid="credit-card-number-input"
                             />
@@ -668,7 +668,7 @@ export const PaymentsPage = () => {
                               value={externalForm.ifsc_code}
                               onChange={(e) => setExternalForm({ ...externalForm, ifsc_code: e.target.value })}
                               required
-                              className="bg-white"
+                              className="bg-white border-neutral-400 text-neutral-900"
                               placeholder="HDFC Bank, ICICI Bank, etc."
                               data-testid="bank-name-input"
                             />
@@ -683,7 +683,7 @@ export const PaymentsPage = () => {
                               value={externalForm.account_number}
                               onChange={(e) => setExternalForm({ ...externalForm, account_number: e.target.value })}
                               required
-                              className="bg-white font-mono"
+                              className="bg-white font-mono border-neutral-400 text-neutral-900"
                               placeholder="Bank account number"
                               data-testid="account-number-input"
                             />
@@ -694,7 +694,7 @@ export const PaymentsPage = () => {
                               value={externalForm.ifsc_code}
                               onChange={(e) => setExternalForm({ ...externalForm, ifsc_code: e.target.value.toUpperCase() })}
                               required
-                              className="bg-white font-mono uppercase"
+                              className="bg-white font-mono uppercase border-neutral-400 text-neutral-900"
                               placeholder="HDFC0001234"
                               data-testid="ifsc-code-input"
                             />
@@ -707,7 +707,7 @@ export const PaymentsPage = () => {
                           value={externalForm.location}
                           onChange={(e) => setExternalForm({ ...externalForm, location: e.target.value })}
                           required
-                          className="bg-white"
+                          className="bg-white border-neutral-400 text-neutral-900"
                           placeholder="City/Location"
                           data-testid="external-location-input"
                         />
@@ -720,7 +720,7 @@ export const PaymentsPage = () => {
                           value={externalForm.amount}
                           onChange={(e) => setExternalForm({ ...externalForm, amount: e.target.value })}
                           required
-                          className="bg-white"
+                          className="bg-white border-neutral-400 text-neutral-900"
                           placeholder={paymentSummary ? `Max: ₹${paymentSummary.external_remaining}` : 'Enter amount'}
                           max={paymentSummary?.external_remaining || undefined}
                           data-testid="external-amount-input"
@@ -729,15 +729,15 @@ export const PaymentsPage = () => {
                       <div>
                         <Label className="text-neutral-700">Payment Mode *</Label>
                         <Select value={externalForm.payment_mode} onValueChange={(v) => setExternalForm({ ...externalForm, payment_mode: v })} required>
-                          <SelectTrigger className="bg-white" data-testid="external-mode-select">
+                          <SelectTrigger className="bg-white border-neutral-400 text-neutral-900" data-testid="external-mode-select">
                             <SelectValue placeholder="Select mode" />
                           </SelectTrigger>
-                          <SelectContent className="bg-white">
-                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                            <SelectItem value="UPI">UPI</SelectItem>
-                            <SelectItem value="RTGS">RTGS</SelectItem>
-                            <SelectItem value="NEFT">NEFT</SelectItem>
-                            <SelectItem value="Cheque">Cheque</SelectItem>
+                          <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
+                            <SelectItem value="Bank Transfer" className="text-neutral-900">Bank Transfer</SelectItem>
+                            <SelectItem value="UPI" className="text-neutral-900">UPI</SelectItem>
+                            <SelectItem value="RTGS" className="text-neutral-900">RTGS</SelectItem>
+                            <SelectItem value="NEFT" className="text-neutral-900">NEFT</SelectItem>
+                            <SelectItem value="Cheque" className="text-neutral-900">Cheque</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -747,7 +747,7 @@ export const PaymentsPage = () => {
                           value={externalForm.utr_number}
                           onChange={(e) => setExternalForm({ ...externalForm, utr_number: e.target.value })}
                           required
-                          className="bg-white font-mono"
+                          className="bg-white font-mono border-neutral-400 text-neutral-900"
                           placeholder="Transaction reference"
                           data-testid="utr-number-input"
                         />
@@ -759,14 +759,14 @@ export const PaymentsPage = () => {
                           value={externalForm.payment_date}
                           onChange={(e) => setExternalForm({ ...externalForm, payment_date: e.target.value })}
                           required
-                          className="bg-white"
+                          className="bg-white border-neutral-400 text-neutral-900"
                           data-testid="external-date-input"
                         />
                       </div>
                     </div>
                     <Button 
                       type="submit" 
-                      className="w-full bg-teal-600 hover:bg-neutral-700 text-white" 
+                      className="w-full bg-neutral-800 hover:bg-neutral-900 text-white" 
                       data-testid="submit-external-payment"
                       disabled={paymentSummary && paymentSummary.external_remaining <= 0}
                     >
@@ -799,7 +799,7 @@ export const PaymentsPage = () => {
             <div className="overflow-x-auto">
               <table className="w-full" data-testid="internal-payments-table">
                 <thead>
-                  <tr className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
+                  <tr className="text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">PO Number</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Payee</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Account</th>
@@ -870,7 +870,7 @@ export const PaymentsPage = () => {
             <div className="overflow-x-auto">
               <table className="w-full" data-testid="external-payments-table">
                 <thead>
-                  <tr className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
+                  <tr className="text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">PO Number</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Payee Type</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Payee Name</th>
@@ -897,7 +897,7 @@ export const PaymentsPage = () => {
                         <td className="px-4 py-3 text-sm font-mono font-medium text-neutral-900">{payment.po_number}</td>
                         <td className="px-4 py-3 text-sm">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            payment.payee_type === 'vendor' ? 'bg-teal-100 text-teal-700' : 'bg-purple-100 text-purple-700'
+                            payment.payee_type === 'vendor' ? 'bg-neutral-200 text-neutral-800' : 'bg-neutral-100 text-neutral-700'
                           }`}>
                             {payment.payee_type === 'cc' ? 'CREDIT CARD' : payment.payee_type?.toUpperCase() || '-'}
                           </span>
@@ -959,7 +959,7 @@ export const PaymentsPage = () => {
 
             {/* Internal Payment Info */}
             {linkedPaymentsDialog.internalPayment && (
-              <div className="p-4 bg-teal-50 rounded-lg border border-teal-200 mb-4">
+              <div className="p-4 bg-neutral-100 rounded-lg border border-neutral-300 mb-4">
                 <h4 className="font-bold text-neutral-900 mb-3 flex items-center gap-2">
                   <Building2 className="w-4 h-4" /> Internal Payment (Magnova → Nova)
                 </h4>
@@ -1018,7 +1018,7 @@ export const PaymentsPage = () => {
                 <div className="border border-neutral-200 rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
+                      <tr className="text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
                         <th className="px-3 py-2 text-left text-xs">Payee Type</th>
                         <th className="px-3 py-2 text-left text-xs">Payee Name</th>
                         <th className="px-3 py-2 text-left text-xs">Account/Card #</th>
@@ -1034,7 +1034,7 @@ export const PaymentsPage = () => {
                         <tr key={payment.payment_id} className="border-b border-neutral-100 hover:bg-neutral-50">
                           <td className="px-3 py-2">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              payment.payee_type === 'vendor' ? 'bg-teal-100 text-teal-700' : 'bg-purple-100 text-purple-700'
+                              payment.payee_type === 'vendor' ? 'bg-neutral-200 text-neutral-800' : 'bg-neutral-100 text-neutral-700'
                             }`}>
                               {payment.payee_type === 'cc' ? 'CREDIT CARD' : payment.payee_type?.toUpperCase()}
                             </span>

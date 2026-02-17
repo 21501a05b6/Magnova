@@ -196,23 +196,23 @@ export const PurchaseOrdersPage = () => {
               </DialogTrigger>
               <DialogContent className="bg-white max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle className="text-neutral-600">Create Purchase Order</DialogTitle>
+                  <DialogTitle className="text-neutral-900">Create Purchase Order</DialogTitle>
                   <DialogDescription className="text-neutral-600">Nova to Magnova PO - Add line items</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreate} className="space-y-6" data-testid="create-po-form">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
                     <div className="space-y-2">
                       <Label className="text-neutral-700 font-medium">P.O Date *</Label>
-                      <Input type="date" value={poDate} onChange={(e) => setPoDate(e.target.value)} className="bg-white text-neutral-900" required data-testid="po-date-input" />
+                      <Input type="date" value={poDate} onChange={(e) => setPoDate(e.target.value)} className="bg-white text-neutral-900 border-neutral-400" required data-testid="po-date-input" />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-neutral-700 font-medium">Purchase Office *</Label>
                       <Select value={purchaseOffice} onValueChange={setPurchaseOffice}>
-                        <SelectTrigger className="bg-white text-neutral-900" data-testid="purchase-office-select"><SelectValue /></SelectTrigger>
-                        <SelectContent className="bg-white">
-                          <SelectItem value="Magnova Head Office">Magnova Head Office</SelectItem>
-                          <SelectItem value="Magnova Branch Office">Magnova Branch Office</SelectItem>
-                          <SelectItem value="Nova Enterprises">Nova Enterprises</SelectItem>
+                        <SelectTrigger className="bg-white text-neutral-900 border-neutral-400" data-testid="purchase-office-select"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-white border-neutral-300 z-[100]">
+                          <SelectItem value="Magnova Head Office" className="text-neutral-900">Magnova Head Office</SelectItem>
+                          <SelectItem value="Magnova Branch Office" className="text-neutral-900">Magnova Branch Office</SelectItem>
+                          <SelectItem value="Nova Enterprises" className="text-neutral-900">Nova Enterprises</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -275,57 +275,57 @@ export const PurchaseOrdersPage = () => {
         </div>
 
         <div className="bg-white border border-neutral-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full" data-testid="po-table">
-              <thead>
-                <tr className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">SL No</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">PO_ID</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">P.O Date</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Purchase Office</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Vendor</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Location</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Brand</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Model</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Storage</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Qty</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Rate</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">PO Value</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table className="w-full text-xs" data-testid="po-table">
+              <thead className="sticky top-0 z-10">
+                <tr className="text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">SL</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">PO ID</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Date</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Office</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Vendor</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Location</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Brand</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Model</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Storage</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Qty</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Rate</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Value</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                  <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={14} className="px-4 py-8 text-center text-neutral-500">Loading...</td></tr>
+                  <tr><td colSpan={14} className="px-3 py-6 text-center text-neutral-500 text-xs">Loading...</td></tr>
                 ) : filteredPos.length === 0 ? (
-                  <tr><td colSpan={14} className="px-4 py-8 text-center text-neutral-500">{searchTerm ? `No results found for "${searchTerm}"` : 'No purchase orders found'}</td></tr>
+                  <tr><td colSpan={14} className="px-3 py-6 text-center text-neutral-500 text-xs">{searchTerm ? `No results found for "${searchTerm}"` : 'No purchase orders found'}</td></tr>
                 ) : filteredPos.flatMap((po, poIndex) => {
                   const items = po.items && po.items.length > 0 ? po.items : [{}];
                   return items.map((item, itemIndex) => (
                     <tr key={`${po.po_number}-${itemIndex}`} className={`border-b border-neutral-100 ${itemIndex === 0 ? 'bg-neutral-50' : 'bg-white'} hover:bg-gray-100`} data-testid="po-row">
-                      <td className="px-3 py-2 text-sm text-neutral-900">{item.sl_no || itemIndex + 1}</td>
-                      <td className="px-3 py-2 text-sm font-mono font-medium text-neutral-900">{itemIndex === 0 ? po.po_number : ''}</td>
-                      <td className="px-3 py-2 text-sm text-neutral-900">{itemIndex === 0 ? (po.po_date ? new Date(po.po_date).toLocaleDateString() : '-') : ''}</td>
-                      <td className="px-3 py-2 text-sm text-neutral-900">{itemIndex === 0 ? (po.purchase_office || '-') : ''}</td>
-                      <td className="px-3 py-2 text-sm text-neutral-900">{item.vendor || '-'}</td>
-                      <td className="px-3 py-2 text-sm text-neutral-900">{item.location || '-'}</td>
-                      <td className="px-3 py-2 text-sm text-neutral-900">{item.brand || '-'}</td>
-                      <td className="px-3 py-2 text-sm text-neutral-900">{item.model || '-'}</td>
-                      <td className="px-3 py-2 text-sm text-neutral-900">{item.storage || '-'}</td>
-                      <td className="px-3 py-2 text-sm text-neutral-900">{item.qty || '-'}</td>
-                      <td className="px-3 py-2 text-sm text-neutral-900">{item.rate ? `₹${item.rate.toFixed(2)}` : '-'}</td>
-                      <td className="px-3 py-2 text-sm font-medium text-neutral-900">{item.po_value ? `₹${item.po_value.toFixed(2)}` : '-'}</td>
-                      <td className="px-3 py-2 text-sm">{itemIndex === 0 ? getStatusBadge(po.approval_status) : ''}</td>
-                      <td className="px-3 py-2 text-sm space-x-1">
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{item.sl_no || itemIndex + 1}</td>
+                      <td className="px-2 py-1.5 text-xs font-mono font-medium text-neutral-900">{itemIndex === 0 ? po.po_number : ''}</td>
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{itemIndex === 0 ? (po.po_date ? new Date(po.po_date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-') : ''}</td>
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{itemIndex === 0 ? (po.purchase_office || '-') : ''}</td>
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{item.vendor || '-'}</td>
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{item.location || '-'}</td>
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{item.brand || '-'}</td>
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{item.model || '-'}</td>
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{item.storage || '-'}</td>
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{item.qty || '-'}</td>
+                      <td className="px-2 py-1.5 text-xs text-neutral-900">{item.rate ? `₹${item.rate.toFixed(2)}` : '-'}</td>
+                      <td className="px-2 py-1.5 text-xs font-medium text-neutral-900">{item.po_value ? `₹${item.po_value.toFixed(2)}` : '-'}</td>
+                      <td className="px-2 py-1.5 text-xs">{itemIndex === 0 ? getStatusBadge(po.approval_status) : ''}</td>
+                      <td className="px-2 py-1.5 text-xs space-x-1">
                         {itemIndex === 0 && (
                           <>
-                            <Button size="sm" variant="ghost" onClick={() => setViewDialog({ open: true, po })} className="text-neutral-900 h-7 w-7 p-0" data-testid="view-po-button"><Eye className="w-4 h-4" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => setViewDialog({ open: true, po })} className="text-neutral-900 h-6 w-6 p-0" data-testid="view-po-button"><Eye className="w-3 h-3" /></Button>
                             {po.approval_status === 'Pending' && (user?.role === 'Approver' || user?.role === 'Admin') && (
-                              <Button size="sm" variant="outline" onClick={() => setApprovalDialog({ open: true, po })} className="h-7 text-xs" data-testid="approve-po-button">Review</Button>
+                              <Button size="sm" variant="outline" onClick={() => setApprovalDialog({ open: true, po })} className="h-6 text-xs px-2" data-testid="approve-po-button">Review</Button>
                             )}
                             {isAdmin && (
-                              <Button size="sm" variant="ghost" onClick={() => handleDelete(po.po_number)} className="text-neutral-800 hover:text-neutral-900 hover:bg-neutral-100 h-7 w-7 p-0" data-testid="delete-po-button"><Trash2 className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => handleDelete(po.po_number)} className="text-neutral-800 hover:text-neutral-900 hover:bg-neutral-100 h-6 w-6 p-0" data-testid="delete-po-button"><Trash2 className="w-3 h-3" /></Button>
                             )}
                           </>
                         )}
@@ -341,8 +341,8 @@ export const PurchaseOrdersPage = () => {
         <Dialog open={approvalDialog.open} onOpenChange={(open) => setApprovalDialog({ open, po: approvalDialog.po })}>
           <DialogContent className="bg-white">
             <DialogHeader>
-              <DialogTitle className="text-neutral-600">Review Purchase Order</DialogTitle>
-              <DialogDescription>PO: <span className="font-mono font-bold">{approvalDialog.po?.po_number}</span></DialogDescription>
+              <DialogTitle className="text-neutral-900">Review Purchase Order</DialogTitle>
+              <DialogDescription className="text-neutral-600">PO: <span className="font-mono font-bold">{approvalDialog.po?.po_number}</span></DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -352,8 +352,8 @@ export const PurchaseOrdersPage = () => {
                 <p><span className="text-neutral-500">Value:</span> ₹{(approvalDialog.po?.total_value || 0).toFixed(2)}</p>
               </div>
               <div>
-                <Label className="text-neutral-700">Rejection Reason (if rejecting)</Label>
-                <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} rows={3} className="bg-white text-neutral-900" data-testid="rejection-reason-input" />
+                <Label className="text-neutral-700 font-medium">Rejection Reason (if rejecting)</Label>
+                <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} rows={3} className="bg-white text-neutral-900 border-neutral-400" data-testid="rejection-reason-input" />
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => handleApproval(approvalDialog.po?.po_number, 'approve')} className="flex-1 bg-gray-900 hover:bg-gray-800 text-white" data-testid="approve-button"><CheckCircle className="w-4 h-4 mr-2" />Approve</Button>
@@ -366,8 +366,8 @@ export const PurchaseOrdersPage = () => {
         <Dialog open={viewDialog.open} onOpenChange={(open) => setViewDialog({ open, po: viewDialog.po })}>
           <DialogContent className="bg-white max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-neutral-600">Purchase Order Details</DialogTitle>
-              <DialogDescription>PO: <span className="font-mono font-bold text-neutral-900">{viewDialog.po?.po_number}</span></DialogDescription>
+              <DialogTitle className="text-neutral-900">Purchase Order Details</DialogTitle>
+              <DialogDescription className="text-neutral-600">PO: <span className="font-mono font-bold text-neutral-900">{viewDialog.po?.po_number}</span></DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
@@ -378,44 +378,46 @@ export const PurchaseOrdersPage = () => {
               </div>
               {viewDialog.po?.items?.length > 0 ? (
                 <div className="border border-neutral-200 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
-                      <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium">SL</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Vendor</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Location</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Brand</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Model</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Storage</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Qty</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Rate</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium">Value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {viewDialog.po.items.map((item, i) => (
-                        <tr key={i} className="border-t border-neutral-100 hover:bg-neutral-50">
-                          <td className="px-3 py-2 text-neutral-900">{item.sl_no || i + 1}</td>
-                          <td className="px-3 py-2 text-neutral-900">{item.vendor}</td>
-                          <td className="px-3 py-2 text-neutral-900">{item.location}</td>
-                          <td className="px-3 py-2 text-neutral-900">{item.brand}</td>
-                          <td className="px-3 py-2 text-neutral-900">{item.model}</td>
-                          <td className="px-3 py-2 text-neutral-900">{item.storage || '-'}</td>
-                          <td className="px-3 py-2 text-neutral-900">{item.qty}</td>
-                          <td className="px-3 py-2 text-neutral-900">₹{(item.rate || 0).toFixed(2)}</td>
-                          <td className="px-3 py-2 text-neutral-900 font-medium">₹{(item.po_value || 0).toFixed(2)}</td>
+                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 z-10 text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
+                        <tr>
+                          <th className="px-2 py-2 text-left text-xs font-medium">SL</th>
+                          <th className="px-2 py-2 text-left text-xs font-medium">Vendor</th>
+                          <th className="px-2 py-2 text-left text-xs font-medium">Location</th>
+                          <th className="px-2 py-2 text-left text-xs font-medium">Brand</th>
+                          <th className="px-2 py-2 text-left text-xs font-medium">Model</th>
+                          <th className="px-2 py-2 text-left text-xs font-medium">Storage</th>
+                          <th className="px-2 py-2 text-left text-xs font-medium">Qty</th>
+                          <th className="px-2 py-2 text-left text-xs font-medium">Rate</th>
+                          <th className="px-2 py-2 text-left text-xs font-medium">Value</th>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-neutral-50 border-t-2 border-neutral-200">
-                      <tr>
-                        <td colSpan="6" className="px-3 py-3 text-right font-medium text-neutral-900">Total:</td>
-                        <td className="px-3 py-3 font-bold text-neutral-900">{viewDialog.po.total_quantity}</td>
-                        <td></td>
-                        <td className="px-3 py-3 font-bold text-neutral-600">₹{(viewDialog.po.total_value || 0).toFixed(2)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {viewDialog.po.items.map((item, i) => (
+                          <tr key={i} className="border-t border-neutral-100 hover:bg-neutral-50">
+                            <td className="px-2 py-1.5 text-xs text-neutral-900">{item.sl_no || i + 1}</td>
+                            <td className="px-2 py-1.5 text-xs text-neutral-900">{item.vendor}</td>
+                            <td className="px-2 py-1.5 text-xs text-neutral-900">{item.location}</td>
+                            <td className="px-2 py-1.5 text-xs text-neutral-900">{item.brand}</td>
+                            <td className="px-2 py-1.5 text-xs text-neutral-900">{item.model}</td>
+                            <td className="px-2 py-1.5 text-xs text-neutral-900">{item.storage || '-'}</td>
+                            <td className="px-2 py-1.5 text-xs text-neutral-900">{item.qty}</td>
+                            <td className="px-2 py-1.5 text-xs text-neutral-900">₹{(item.rate || 0).toFixed(2)}</td>
+                            <td className="px-2 py-1.5 text-xs text-neutral-900 font-medium">₹{(item.po_value || 0).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="sticky bottom-0 bg-neutral-50 border-t-2 border-neutral-200">
+                        <tr>
+                          <td colSpan="6" className="px-2 py-2 text-right font-medium text-neutral-900 text-xs">Total:</td>
+                          <td className="px-2 py-2 font-bold text-neutral-900 text-xs">{viewDialog.po.total_quantity}</td>
+                          <td></td>
+                          <td className="px-2 py-2 font-bold text-neutral-600 text-xs">₹{(viewDialog.po.total_value || 0).toFixed(2)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-8 text-neutral-500 bg-neutral-50 rounded-lg">No line items found</div>

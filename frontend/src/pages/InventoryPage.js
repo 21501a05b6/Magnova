@@ -232,14 +232,14 @@ export const InventoryPage = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      Procured: 'bg-teal-50 text-teal-700 border-teal-200',
-      'Inward Nova': 'bg-purple-50 text-purple-700 border-purple-200',
-      'Inward Magnova': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      Procured: 'bg-neutral-100 text-neutral-800 border-neutral-400',
+      'Inward Nova': 'bg-neutral-100 text-neutral-700 border-neutral-300',
+      'Inward Magnova': 'bg-neutral-100 text-neutral-700 border-neutral-300',
       'Outward Nova': 'bg-neutral-100 text-neutral-800 border-neutral-300',
       'Outward Magnova': 'bg-neutral-100 text-neutral-800 border-neutral-300',
-      Available: 'bg-teal-50 text-teal-700 border-teal-200',
+      Available: 'bg-neutral-100 text-neutral-800 border-neutral-400',
       Reserved: 'bg-neutral-100 text-neutral-800 border-neutral-400',
-      Dispatched: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+      Dispatched: 'bg-neutral-100 text-neutral-700 border-neutral-300',
     };
     return colors[status] || 'bg-neutral-50 text-neutral-700 border-neutral-200';
   };
@@ -364,7 +364,7 @@ export const InventoryPage = () => {
     return rows;
   };
 
-  const chartPalette = ['#0d9488', '#06b6d4', '#6366f1', '#8b5cf6', '#ec4899'];
+  const chartPalette = ['#60a5fa', '#a78bfa', '#34d399', '#fbbf24', '#f87171', '#818cf8'];
 
   // Stats for dashboard cards
   const inventoryStats = useMemo(() => {
@@ -440,11 +440,11 @@ export const InventoryPage = () => {
       <div data-testid="inventory-page">
         {/* Inventory Notifications Banner - Shipment Complete, Ready for Inventory */}
         {pendingInventory.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-cyan-50 to-teal-50 border border-cyan-200 rounded-lg p-4" data-testid="inventory-notifications">
+          <div className="mb-6 bg-neutral-50 border border-neutral-300 rounded-lg p-4" data-testid="inventory-notifications">
             <div className="flex items-center gap-2 mb-3">
-              <Bell className="w-5 h-5 text-cyan-600 animate-pulse" />
-              <h3 className="font-semibold text-cyan-800">Shipment Complete - Ready for Inventory Scan</h3>
-              <span className="bg-cyan-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingInventory.length}</span>
+              <Bell className="w-5 h-5 text-neutral-600 animate-pulse" />
+              <h3 className="font-semibold text-neutral-800">Shipment Complete - Ready for Inventory Scan</h3>
+              <span className="bg-neutral-800 text-white text-xs px-2 py-0.5 rounded-full">{pendingInventory.length}</span>
             </div>
             <div className="space-y-2">
               {pendingInventory.map((notif, index) => (
@@ -455,8 +455,8 @@ export const InventoryPage = () => {
                   data-testid="inventory-notification-item"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="bg-cyan-100 p-2 rounded-lg">
-                      <Package className="w-5 h-5 text-cyan-600" />
+                    <div className="bg-neutral-100 p-2 rounded-lg border border-neutral-200">
+                      <Package className="w-5 h-5 text-neutral-600" />
                     </div>
                     <div>
                       <div className="font-medium text-neutral-900">
@@ -472,7 +472,7 @@ export const InventoryPage = () => {
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
-                      className="bg-cyan-600 hover:bg-cyan-700"
+                      className="bg-neutral-800 hover:bg-neutral-900"
                       onClick={(e) => { e.stopPropagation(); handleNotificationClick(notif); }}
                     >
                       <Scan className="w-4 h-4 mr-1" />
@@ -496,7 +496,7 @@ export const InventoryPage = () => {
         <div className="flex items-center justify-end gap-3 mb-6">
           <Button
             variant="outline"
-            className="border-teal-200 text-teal-700 hover:bg-teal-50"
+            className="border-neutral-300 text-neutral-700 hover:bg-neutral-100"
             onClick={() => setShowDashboard((prev) => !prev)}
             data-testid="toggle-dashboard-button"
           >
@@ -505,7 +505,7 @@ export const InventoryPage = () => {
           </Button>
           <Button
             variant="outline"
-            className="border-teal-200 text-teal-700 hover:bg-teal-50"
+            className="border-neutral-300 text-neutral-700 hover:bg-neutral-100"
             onClick={() => setShowCharts((prev) => !prev)}
             data-testid="toggle-charts-button"
           >
@@ -521,7 +521,7 @@ export const InventoryPage = () => {
             </DialogTrigger>
             <DialogContent className="bg-white max-w-lg">
               <DialogHeader>
-                <DialogTitle className="text-neutral-600">Scan IMEI</DialogTitle>
+                <DialogTitle className="text-neutral-900">Scan IMEI</DialogTitle>
                 <DialogDescription className="text-neutral-600">Enter IMEI to auto-populate details and update status</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleScan} className="space-y-4" data-testid="scan-form">
@@ -533,7 +533,7 @@ export const InventoryPage = () => {
                       value={scanData.imei}
                       onChange={(e) => handleImeiChange(e.target.value)}
                       required
-                      className="font-mono bg-white text-neutral-900 pr-10"
+                      className="font-mono bg-white text-neutral-900 pr-10 border-neutral-400 h-9"
                       data-testid="scan-imei-input"
                       placeholder="Enter IMEI number"
                     />
@@ -545,9 +545,9 @@ export const InventoryPage = () => {
                     {!lookupLoading && imeiLookup && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         {imeiLookup.found ? (
-                          <CheckCircle className="h-4 w-4 text-teal-500" />
+                          <CheckCircle className="h-4 w-4 text-neutral-600" />
                         ) : (
-                          <AlertCircle className="h-4 w-4 text-neutral-1000" />
+                          <AlertCircle className="h-4 w-4 text-neutral-800" />
                         )}
                       </div>
                     )}
@@ -557,8 +557,8 @@ export const InventoryPage = () => {
                   {imeiLookup && (
                     <div className={`mt-2 p-3 rounded-lg text-sm ${
                       imeiLookup.found 
-                        ? 'bg-teal-50 border border-teal-200' 
-                        : 'bg-neutral-100 border border-neutral-300'
+                        ? 'bg-neutral-50 border border-neutral-300' 
+                        : 'bg-neutral-100 border border-neutral-400'
                     }`}>
                       {imeiLookup.found ? (
                         <div className="space-y-1">
@@ -569,7 +569,7 @@ export const InventoryPage = () => {
                           )}
                           {imeiLookup.in_procurement && (
                             <>
-                              <p className="text-teal-700">
+                              <p className="text-neutral-800">
                                 <span className="font-medium">From Procurement:</span> {imeiLookup.brand} {imeiLookup.model}
                               </p>
                               <p className="text-neutral-600">
@@ -627,16 +627,16 @@ export const InventoryPage = () => {
                 <div>
                   <Label className="text-neutral-700">Action *</Label>
                   <Select value={scanData.action} onValueChange={(value) => setScanData({ ...scanData, action: value })} required>
-                    <SelectTrigger data-testid="scan-action-select" className="bg-white text-neutral-900">
+                    <SelectTrigger data-testid="scan-action-select" className="bg-white text-neutral-900 border-neutral-400 h-9">
                       <SelectValue placeholder="Select action" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white">
-                      <SelectItem value="inward_nova">Inward Nova</SelectItem>
-                      <SelectItem value="inward_magnova">Inward Magnova</SelectItem>
-                      <SelectItem value="outward_nova">Outward Nova</SelectItem>
-                      <SelectItem value="outward_magnova">Outward Magnova</SelectItem>
-                      <SelectItem value="dispatch">Dispatch</SelectItem>
-                      <SelectItem value="available">Mark Available</SelectItem>
+                    <SelectContent className="bg-white border-neutral-300 z-[100]">
+                      <SelectItem value="inward_nova" className="text-neutral-900">Inward Nova</SelectItem>
+                      <SelectItem value="inward_magnova" className="text-neutral-900">Inward Magnova</SelectItem>
+                      <SelectItem value="outward_nova" className="text-neutral-900">Outward Nova</SelectItem>
+                      <SelectItem value="outward_magnova" className="text-neutral-900">Outward Magnova</SelectItem>
+                      <SelectItem value="dispatch" className="text-neutral-900">Dispatch</SelectItem>
+                      <SelectItem value="available" className="text-neutral-900">Mark Available</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -647,7 +647,7 @@ export const InventoryPage = () => {
                     <Input
                       value={scanData.brand}
                       onChange={(e) => setScanData({ ...scanData, brand: e.target.value })}
-                      className="bg-white text-neutral-900"
+                      className="bg-white text-neutral-900 border-neutral-400 h-9"
                       placeholder="Enter brand"
                     />
                   </div>
@@ -656,7 +656,7 @@ export const InventoryPage = () => {
                     <Input
                       value={scanData.model}
                       onChange={(e) => setScanData({ ...scanData, model: e.target.value })}
-                      className="bg-white text-neutral-900"
+                      className="bg-white text-neutral-900 border-neutral-400 h-9"
                       placeholder="Enter model"
                     />
                   </div>
@@ -665,7 +665,7 @@ export const InventoryPage = () => {
                     <Input
                       value={scanData.colour}
                       onChange={(e) => setScanData({ ...scanData, colour: e.target.value })}
-                      className="bg-white text-neutral-900"
+                      className="bg-white text-neutral-900 border-neutral-400 h-9"
                       placeholder="Enter colour"
                     />
                   </div>
@@ -679,21 +679,21 @@ export const InventoryPage = () => {
                       onValueChange={(value) => setScanData({ ...scanData, vendor: value })} 
                       required={!imeiLookup?.found}
                     >
-                      <SelectTrigger className={`text-neutral-900 ${imeiLookup?.found && scanData.vendor ? 'bg-neutral-100' : 'bg-white'}`}>
+                      <SelectTrigger className={`text-neutral-900 border-neutral-400 h-9 ${imeiLookup?.found && scanData.vendor ? 'bg-neutral-100' : 'bg-white'}`}>
                         <SelectValue placeholder="Select vendor" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white">
+                      <SelectContent className="bg-white border-neutral-300 z-[100]">
                         {vendors.length > 0 ? (
                           vendors.map((vendor) => (
-                            <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
+                            <SelectItem key={vendor} value={vendor} className="text-neutral-900">{vendor}</SelectItem>
                           ))
                         ) : (
                           <>
-                            <SelectItem value="Croma">Croma</SelectItem>
-                            <SelectItem value="Reliance Digital">Reliance Digital</SelectItem>
-                            <SelectItem value="Vijay Sales">Vijay Sales</SelectItem>
-                            <SelectItem value="Amazon">Amazon</SelectItem>
-                            <SelectItem value="Flipkart">Flipkart</SelectItem>
+                            <SelectItem value="Croma" className="text-neutral-900">Croma</SelectItem>
+                            <SelectItem value="Reliance Digital" className="text-neutral-900">Reliance Digital</SelectItem>
+                            <SelectItem value="Vijay Sales" className="text-neutral-900">Vijay Sales</SelectItem>
+                            <SelectItem value="Amazon" className="text-neutral-900">Amazon</SelectItem>
+                            <SelectItem value="Flipkart" className="text-neutral-900">Flipkart</SelectItem>
                           </>
                         )}
                       </SelectContent>
@@ -707,22 +707,22 @@ export const InventoryPage = () => {
                       onValueChange={(value) => setScanData({ ...scanData, location: value })} 
                       required={!imeiLookup?.found}
                     >
-                      <SelectTrigger className={`text-neutral-900 ${imeiLookup?.found && scanData.location ? 'bg-neutral-100' : 'bg-white'}`} data-testid="scan-location-select">
+                      <SelectTrigger className={`text-neutral-900 border-neutral-400 h-9 ${imeiLookup?.found && scanData.location ? 'bg-neutral-100' : 'bg-white'}`} data-testid="scan-location-select">
                         <SelectValue placeholder="Select location" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white">
+                      <SelectContent className="bg-white border-neutral-300 z-[100]">
                         {locations.length > 0 ? (
                           locations.map((loc) => (
-                            <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                            <SelectItem key={loc} value={loc} className="text-neutral-900">{loc}</SelectItem>
                           ))
                         ) : (
                           <>
-                            <SelectItem value="Mumbai">Mumbai</SelectItem>
-                            <SelectItem value="Delhi">Delhi</SelectItem>
-                            <SelectItem value="Bangalore">Bangalore</SelectItem>
-                            <SelectItem value="Chennai">Chennai</SelectItem>
-                            <SelectItem value="Hyderabad">Hyderabad</SelectItem>
-                            <SelectItem value="Pune">Pune</SelectItem>
+                            <SelectItem value="Mumbai" className="text-neutral-900">Mumbai</SelectItem>
+                            <SelectItem value="Delhi" className="text-neutral-900">Delhi</SelectItem>
+                            <SelectItem value="Bangalore" className="text-neutral-900">Bangalore</SelectItem>
+                            <SelectItem value="Chennai" className="text-neutral-900">Chennai</SelectItem>
+                            <SelectItem value="Hyderabad" className="text-neutral-900">Hyderabad</SelectItem>
+                            <SelectItem value="Pune" className="text-neutral-900">Pune</SelectItem>
                           </>
                         )}
                       </SelectContent>
@@ -774,30 +774,30 @@ export const InventoryPage = () => {
             </div>
 
             {/* Compact Location Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-h-[500px] overflow-y-auto pr-2">
               {dashboardData.locations.map((locationEntry) => {
                 const models = Array.from(locationEntry.models.values());
                 return (
                   <div
                     key={locationEntry.location}
-                    className="bg-white border border-neutral-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                    className="bg-white border border-neutral-300 rounded-md overflow-hidden hover:shadow-sm transition-shadow h-[180px] flex flex-col"
                     data-testid={`dashboard-card-${locationEntry.location}`}
                   >
                     {/* Simple Header */}
-                    <div className="bg-teal-600 text-white px-3 py-2 flex items-center justify-between">
-                      <span className="font-semibold text-sm">{locationEntry.location}</span>
-                      <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-semibold">{locationEntry.total}</span>
+                    <div className="text-neutral-700 px-2 py-1 flex items-center justify-between" style={{ backgroundColor: '#D9E2E8' }}>
+                      <span className="font-medium text-xs">{locationEntry.location}</span>
+                      <span className="bg-neutral-700 text-white px-1.5 py-0.5 rounded text-xs font-semibold">{locationEntry.total}</span>
                     </div>
 
                     {/* Compact Table */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead className="bg-neutral-50 border-b border-neutral-200">
+                    <div className="overflow-x-auto overflow-y-auto flex-1">
+                      <table className="w-full text-xs h-full">
+                        <thead className="sticky top-0 bg-neutral-100 border-b border-neutral-300">
                           <tr>
-                            <th className="px-2 py-1.5 text-left font-semibold text-neutral-600">Model</th>
-                            <th className="px-2 py-1.5 text-center font-semibold text-neutral-600">Storage</th>
-                            <th className="px-2 py-1.5 text-left font-semibold text-neutral-600">Colour</th>
-                            <th className="px-2 py-1.5 text-right font-semibold text-neutral-600">Qty</th>
+                            <th className="px-1.5 py-1 text-left font-medium text-neutral-600 text-xs">Model</th>
+                            <th className="px-1.5 py-1 text-center font-medium text-neutral-600 text-xs">Stor</th>
+                            <th className="px-1.5 py-1 text-left font-medium text-neutral-600 text-xs">Color</th>
+                            <th className="px-1.5 py-1 text-right font-medium text-neutral-600 text-xs">Qty</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100">
@@ -811,7 +811,7 @@ export const InventoryPage = () => {
                                 {row.showModel && (
                                   <td 
                                     rowSpan={row.modelRowSpan} 
-                                    className="px-2 py-1.5 text-neutral-900 font-medium align-top border-r border-neutral-100"
+                                    className="px-1.5 py-1 text-neutral-700 font-medium align-top border-r border-neutral-200 text-xs"
                                   >
                                     {row.model}
                                   </td>
@@ -819,22 +819,22 @@ export const InventoryPage = () => {
                                 {row.showStorage && !row.isModelTotal && (
                                   <td 
                                     rowSpan={row.storageRowSpan} 
-                                    className="px-2 py-1.5 text-center text-neutral-700 align-top border-r border-neutral-100"
+                                    className="px-1.5 py-1 text-center text-neutral-600 align-top border-r border-neutral-200 text-xs"
                                   >
                                     {row.storage}
                                   </td>
                                 )}
                                 {row.isModelTotal && (
-                                  <td colSpan="2" className="px-2 py-1.5 text-center text-neutral-700 font-semibold border-r border-neutral-100">
+                                  <td colSpan="2" className="px-1.5 py-1 text-center text-neutral-600 font-semibold border-r border-neutral-200 text-xs">
                                     Total
                                   </td>
                                 )}
                                 {!row.isModelTotal && (
-                                  <td className="px-2 py-1.5 text-neutral-700">
+                                  <td className="px-1.5 py-1 text-neutral-600 text-xs">
                                     {row.colour}
                                   </td>
                                 )}
-                                <td className={`px-2 py-1.5 text-right ${row.isTotalRow ? 'text-neutral-900 font-bold' : 'text-neutral-700'}`}>
+                                <td className={`px-1.5 py-1 text-right text-xs ${row.isTotalRow ? 'text-neutral-800 font-bold' : 'text-neutral-600'}`}>
                                   {row.qty}
                                 </td>
                               </tr>
@@ -850,24 +850,24 @@ export const InventoryPage = () => {
               {/* Total Card - Simplified */}
               {dashboardData.total && (
                 <div
-                  className="bg-white border border-teal-600 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                  className="bg-white border-2 border-neutral-400 rounded-md overflow-hidden hover:shadow-sm transition-shadow h-[180px] flex flex-col"
                   data-testid="dashboard-card-Total"
                 >
                   {/* Simple Header */}
-                  <div className="bg-teal-600 text-white px-3 py-2 flex items-center justify-between">
-                    <span className="font-semibold text-sm">Total</span>
-                    <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-semibold">{dashboardData.total.total}</span>
+                  <div className="bg-neutral-700 text-white px-2 py-1 flex items-center justify-between">
+                    <span className="font-medium text-xs">Total</span>
+                    <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs font-semibold">{dashboardData.total.total}</span>
                   </div>
 
                   {/* Compact Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead className="bg-neutral-50 border-b border-neutral-200">
+                  <div className="overflow-x-auto overflow-y-auto flex-1">
+                    <table className="w-full text-xs h-full">
+                      <thead className="sticky top-0 bg-neutral-100 border-b border-neutral-300">
                         <tr>
-                          <th className="px-2 py-1.5 text-left font-semibold text-neutral-600">Model</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-neutral-600">Storage</th>
-                          <th className="px-2 py-1.5 text-left font-semibold text-neutral-600">Colour</th>
-                          <th className="px-2 py-1.5 text-right font-semibold text-neutral-600">Qty</th>
+                          <th className="px-1.5 py-1 text-left font-medium text-neutral-600 text-xs">Model</th>
+                          <th className="px-1.5 py-1 text-center font-medium text-neutral-600 text-xs">Stor</th>
+                          <th className="px-1.5 py-1 text-left font-medium text-neutral-600 text-xs">Color</th>
+                          <th className="px-1.5 py-1 text-right font-medium text-neutral-600 text-xs">Qty</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-100">
@@ -881,7 +881,7 @@ export const InventoryPage = () => {
                               {row.showModel && (
                                 <td 
                                   rowSpan={row.modelRowSpan} 
-                                  className="px-2 py-1.5 text-neutral-900 font-medium align-top border-r border-neutral-100"
+                                  className="px-1.5 py-1 text-neutral-700 font-medium align-top border-r border-neutral-200 text-xs"
                                 >
                                   {row.model}
                                 </td>
@@ -889,22 +889,22 @@ export const InventoryPage = () => {
                               {row.showStorage && !row.isModelTotal && (
                                 <td 
                                   rowSpan={row.storageRowSpan} 
-                                  className="px-2 py-1.5 text-center text-neutral-700 align-top border-r border-neutral-100"
+                                  className="px-1.5 py-1 text-center text-neutral-600 align-top border-r border-neutral-200 text-xs"
                                 >
                                   {row.storage}
                                 </td>
                               )}
                               {row.isModelTotal && (
-                                <td colSpan="2" className="px-2 py-1.5 text-center text-neutral-700 font-semibold border-r border-neutral-100">
+                                <td colSpan="2" className="px-1.5 py-1 text-center text-neutral-600 font-semibold border-r border-neutral-200 text-xs">
                                   Total
                                 </td>
                               )}
                               {!row.isModelTotal && (
-                                <td className="px-2 py-1.5 text-neutral-700">
+                                <td className="px-1.5 py-1 text-neutral-600 text-xs">
                                   {row.colour}
                                 </td>
                               )}
-                              <td className={`px-2 py-1.5 text-right ${row.isTotalRow ? 'text-neutral-900 font-bold' : 'text-neutral-700'}`}>
+                              <td className={`px-1.5 py-1 text-right text-xs ${row.isTotalRow ? 'text-neutral-800 font-bold' : 'text-neutral-600'}`}>
                                 {row.qty}
                               </td>
                             </tr>
@@ -1017,9 +1017,9 @@ export const InventoryPage = () => {
             {/* Charts Grid */}
             <div className="grid gap-6 lg:grid-cols-3">
               {/* Bar Chart - Locations */}
-              <div className="bg-white rounded-2xl shadow-md border border-neutral-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-teal-600 to-teal-500 px-5 py-4">
-                  <h3 className="font-semibold text-white flex items-center gap-2">
+              <div className="bg-white rounded-lg shadow-md border border-neutral-300 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div className="px-5 py-4 text-neutral-700" style={{ backgroundColor: '#D9E2E8' }}>
+                  <h3 className="font-semibold flex items-center gap-2">
                     <MapPin className="w-5 h-5" />
                     Top Locations
                   </h3>
@@ -1063,9 +1063,9 @@ export const InventoryPage = () => {
               </div>
 
               {/* Pie Chart - Models */}
-              <div className="bg-white rounded-2xl shadow-md border border-neutral-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-violet-600 to-violet-500 px-5 py-4">
-                  <h3 className="font-semibold text-white flex items-center gap-2">
+              <div className="bg-white rounded-lg shadow-md border border-neutral-300 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div className="px-5 py-4 text-neutral-700" style={{ backgroundColor: '#D9E2E8' }}>
+                  <h3 className="font-semibold flex items-center gap-2">
                     <Smartphone className="w-5 h-5" />
                     Top Models
                   </h3>
@@ -1113,9 +1113,9 @@ export const InventoryPage = () => {
               </div>
 
               {/* Doughnut Chart - Colours */}
-              <div className="bg-white rounded-2xl shadow-md border border-neutral-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-rose-600 to-rose-500 px-5 py-4">
-                  <h3 className="font-semibold text-white flex items-center gap-2">
+              <div className="bg-white rounded-lg shadow-md border border-neutral-300 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div className="px-5 py-4 text-neutral-700" style={{ backgroundColor: '#D9E2E8' }}>
+                  <h3 className="font-semibold flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5" />
                     Top Colours
                   </h3>
@@ -1195,49 +1195,49 @@ export const InventoryPage = () => {
         </div>
 
         <div className="bg-white border border-neutral-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full" data-testid="inventory-table">
-              <thead>
-                <tr className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">IMEI</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Brand</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Model</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Colour</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Location</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Updated</th>
-                  {isAdmin && <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>}
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table className="w-full text-xs" data-testid="inventory-table">
+              <thead className="sticky top-0 z-10">
+                <tr className="text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">IMEI</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Brand</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Model</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Colour</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Location</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Updated</th>
+                  {isAdmin && <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {filteredInventory.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 8 : 7} className="px-4 py-8 text-center text-neutral-500">
+                    <td colSpan={isAdmin ? 8 : 7} className="px-3 py-6 text-center text-neutral-500 text-xs">
                       No inventory items found
                     </td>
                   </tr>
                 ) : (
                   filteredInventory.map((item) => (
                     <tr key={item.imei} className="table-row border-b border-neutral-100 hover:bg-neutral-50" data-testid="inventory-row">
-                      <td className="px-4 py-3 text-sm font-mono font-medium text-neutral-900">{item.imei}</td>
-                      <td className="px-4 py-3 text-sm text-neutral-900">{item.brand || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-neutral-900">{item.model || item.device_model || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-neutral-600">{item.colour || '-'}</td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-3 py-2 text-xs font-mono font-medium text-neutral-900">{item.imei}</td>
+                      <td className="px-3 py-2 text-xs text-neutral-900">{item.brand || '-'}</td>
+                      <td className="px-3 py-2 text-xs text-neutral-900">{item.model || item.device_model || '-'}</td>
+                      <td className="px-3 py-2 text-xs text-neutral-600">{item.colour || '-'}</td>
+                      <td className="px-3 py-2 text-xs">
                         <span className={`status-badge ${getStatusColor(item.status)}`}>{item.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-neutral-600">{item.current_location}</td>
-                      <td className="px-4 py-3 text-sm text-neutral-600">{new Date(item.updated_at).toLocaleDateString()}</td>
+                      <td className="px-3 py-2 text-xs text-neutral-600">{item.current_location}</td>
+                      <td className="px-3 py-2 text-xs text-neutral-600">{new Date(item.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
                       {isAdmin && (
-                        <td className="px-4 py-3 text-sm">
+                        <td className="px-3 py-2 text-xs">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleDelete(item.imei)}
-                            className="text-neutral-800 hover:text-neutral-900 hover:bg-neutral-100 h-8 w-8 p-0"
+                            className="text-neutral-800 hover:text-neutral-900 hover:bg-neutral-100 h-6 w-6 p-0"
                             data-testid="delete-inventory-button"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         </td>
                       )}

@@ -87,8 +87,7 @@ export const LogisticsPage = () => {
   const fetchPOs = async () => {
     try {
       const response = await api.get('/purchase-orders');
-      const approved = response.data.filter((po) => po.approval_status === 'Approved');
-      setPOs(approved);
+      setPOs(response.data);
     } catch (error) {
       console.error('Error fetching POs:', error);
     }
@@ -321,8 +320,8 @@ export const LogisticsPage = () => {
   const getStatusColor = (status) => {
     const colors = {
       'Pending': 'bg-neutral-100 text-neutral-800 border-neutral-400',
-      'In Transit': 'bg-teal-50 text-teal-700 border-teal-200',
-      'Delivered': 'bg-teal-50 text-teal-700 border-teal-200',
+      'In Transit': 'bg-neutral-100 text-neutral-700 border-neutral-300',
+      'Delivered': 'bg-neutral-100 text-neutral-800 border-neutral-400',
       'Cancelled': 'bg-neutral-100 text-neutral-900 border-neutral-300',
     };
     return colors[status] || 'bg-neutral-50 text-neutral-700 border-neutral-200';
@@ -348,11 +347,11 @@ export const LogisticsPage = () => {
       <div data-testid="logistics-page">
         {/* Logistics Notifications Banner - Procurement Complete, Ready for Shipment */}
         {pendingLogistics.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-neutral-100 to-neutral-100 border border-neutral-300 rounded-lg p-4" data-testid="logistics-notifications">
+          <div className="mb-6 bg-neutral-50 border border-neutral-300 rounded-lg p-4" data-testid="logistics-notifications">
             <div className="flex items-center gap-2 mb-3">
-              <Bell className="w-5 h-5 text-neutral-700 animate-pulse" />
-              <h3 className="font-semibold text-neutral-900">Procurement Complete - Ready for Shipment</h3>
-              <span className="bg-neutral-1000 text-white text-xs px-2 py-0.5 rounded-full">{pendingLogistics.length}</span>
+              <Bell className="w-5 h-5 text-neutral-600 animate-pulse" />
+              <h3 className="font-semibold text-neutral-800">Procurement Complete - Ready for Shipment</h3>
+              <span className="bg-neutral-800 text-white text-xs px-2 py-0.5 rounded-full">{pendingLogistics.length}</span>
             </div>
             <div className="space-y-2">
               {pendingLogistics.map((proc, index) => (
@@ -363,7 +362,7 @@ export const LogisticsPage = () => {
                   data-testid="logistics-notification-item"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="bg-neutral-200 p-2 rounded-lg">
+                    <div className="bg-neutral-100 p-2 rounded-lg border border-neutral-200">
                       <Truck className="w-5 h-5 text-neutral-700" />
                     </div>
                     <div>
@@ -412,7 +411,7 @@ export const LogisticsPage = () => {
             </DialogTrigger>
             <DialogContent className="max-w-3xl bg-white">
               <DialogHeader>
-                <DialogTitle className="text-neutral-600">Create Shipment</DialogTitle>
+                <DialogTitle className="text-neutral-900">Create Shipment</DialogTitle>
                 <DialogDescription className="text-neutral-600">Record new shipment details - Select PO to auto-populate</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4" data-testid="shipment-form">
@@ -422,15 +421,19 @@ export const LogisticsPage = () => {
                     <div>
                       <Label className="text-neutral-700 font-medium">PO Number *</Label>
                       <Select value={formData.po_number} onValueChange={handlePOSelect} required>
-                        <SelectTrigger className="bg-white">
+                        <SelectTrigger className="bg-white border-neutral-400 text-neutral-900 font-medium h-9">
                           <SelectValue placeholder="Select PO" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white">
-                          {pos.map((po) => (
-                            <SelectItem key={po.po_number} value={po.po_number}>
-                              {po.po_number} - {po.purchase_office}
-                            </SelectItem>
-                          ))}
+                        <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
+                          {pos.length === 0 ? (
+                            <SelectItem value="none" disabled className="text-neutral-500">No POs available</SelectItem>
+                          ) : (
+                            pos.map((po) => (
+                              <SelectItem key={po.po_number} value={po.po_number} className="text-neutral-900 border-b border-neutral-50 last:border-0 hover:bg-neutral-50">
+                                {po.po_number} - {po.purchase_office} ({po.approval_status})
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -440,12 +443,12 @@ export const LogisticsPage = () => {
                       <div>
                         <Label className="text-neutral-700 font-medium">Select Line Item *</Label>
                         <Select value={selectedItemIndex} onValueChange={(idx) => handleItemSelect(idx)} required>
-                          <SelectTrigger className="bg-white">
+                          <SelectTrigger className="bg-white border-neutral-400 text-neutral-900 font-medium h-9">
                             <SelectValue placeholder="Select item from PO" />
                           </SelectTrigger>
-                          <SelectContent className="bg-white">
+                          <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
                             {poItems.map((item, index) => (
-                              <SelectItem key={index} value={index.toString()}>
+                              <SelectItem key={index} value={index.toString()} className="text-neutral-900 border-b border-neutral-50 last:border-0 hover:bg-neutral-50">
                                 {item.vendor} - {item.location} - {item.brand} {item.model} (Qty: {item.qty})
                               </SelectItem>
                             ))}
@@ -513,7 +516,7 @@ export const LogisticsPage = () => {
                           required
                           min="1"
                           max={availableQty.available || 999}
-                          className="bg-white text-neutral-900"
+                          className="bg-white text-neutral-900 border-neutral-400 h-9"
                           placeholder={`Max: ${availableQty.available || 0}`}
                         />
                       </div>
@@ -526,7 +529,7 @@ export const LogisticsPage = () => {
                           value={formData.from_location}
                           onChange={(e) => setFormData({ ...formData, from_location: e.target.value })}
                           required
-                          className="bg-white text-neutral-900"
+                          className="bg-white text-neutral-900 border-neutral-400 h-9"
                           placeholder="Enter pickup location"
                           data-testid="pickup-location-input"
                         />
@@ -537,7 +540,7 @@ export const LogisticsPage = () => {
                           value={formData.to_location}
                           onChange={(e) => setFormData({ ...formData, to_location: e.target.value })}
                           required
-                          className="bg-white text-neutral-900"
+                          className="bg-white text-neutral-900 border-neutral-400 h-9"
                           placeholder="Enter destination"
                           data-testid="to-location-input"
                         />
@@ -548,7 +551,7 @@ export const LogisticsPage = () => {
                           value={formData.transporter_name}
                           onChange={(e) => setFormData({ ...formData, transporter_name: e.target.value })}
                           required
-                          className="bg-white text-neutral-900"
+                          className="bg-white text-neutral-900 border-neutral-400 h-9"
                           data-testid="transporter-input"
                         />
                       </div>
@@ -558,7 +561,7 @@ export const LogisticsPage = () => {
                           value={formData.vehicle_number}
                           onChange={(e) => setFormData({ ...formData, vehicle_number: e.target.value })}
                           required
-                          className="bg-white text-neutral-900 font-mono"
+                          className="bg-white text-neutral-900 font-mono border-neutral-400 h-9"
                           data-testid="vehicle-input"
                         />
                       </div>
@@ -569,7 +572,7 @@ export const LogisticsPage = () => {
                           value={formData.pickup_date}
                           onChange={(e) => setFormData({ ...formData, pickup_date: e.target.value })}
                           required
-                          className="bg-white text-neutral-900"
+                          className="bg-white text-neutral-900 border-neutral-400 h-9"
                           data-testid="pickup-date-input"
                         />
                       </div>
@@ -580,7 +583,7 @@ export const LogisticsPage = () => {
                           value={formData.expected_delivery}
                           onChange={(e) => setFormData({ ...formData, expected_delivery: e.target.value })}
                           required
-                          className="bg-white text-neutral-900"
+                          className="bg-white text-neutral-900 border-neutral-400 h-9"
                           data-testid="delivery-date-input"
                         />
                       </div>
@@ -610,7 +613,7 @@ export const LogisticsPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="shipments-table">
               <thead>
-                <tr className="text-gray-900" style={{ backgroundColor: '#EAEFEF' }}>
+                <tr className="text-gray-900" style={{ backgroundColor: '#BFC9D1' }}>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">PO Number</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Vendor</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Brand/Model</th>
@@ -634,7 +637,7 @@ export const LogisticsPage = () => {
                 ) : (
                   filteredShipments.map((shipment) => (
                     <tr key={shipment.shipment_id} className="table-row border-b border-neutral-100 hover:bg-neutral-50" data-testid="shipment-row">
-                      <td className="px-4 py-3 text-sm font-mono font-medium text-neutral-900">{shipment.po_number}</td>
+                      <td className="px-4 py-3 text-sm font-mono font-medium text-neutral-900">{shipment.po_number || '-'}</td>
                       <td className="px-4 py-3 text-sm text-neutral-900">{shipment.vendor || '-'}</td>
                       <td className="px-4 py-3 text-sm text-neutral-900">{shipment.brand} {shipment.model}</td>
                       <td className="px-4 py-3 text-sm text-neutral-900">{shipment.transporter_name}</td>
@@ -678,7 +681,7 @@ export const LogisticsPage = () => {
         <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
           <DialogContent className="bg-white max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-neutral-600">Update Shipment Status</DialogTitle>
+              <DialogTitle className="text-neutral-900">Update Shipment Status</DialogTitle>
               <DialogDescription className="text-neutral-600">
                 PO: {selectedShipment?.po_number} | {selectedShipment?.vendor}
               </DialogDescription>
@@ -687,13 +690,13 @@ export const LogisticsPage = () => {
               <div>
                 <Label className="text-neutral-700">Status</Label>
                 <Select value={newStatus} onValueChange={setNewStatus}>
-                  <SelectTrigger className="bg-white">
+                  <SelectTrigger className="bg-white border-neutral-400 text-neutral-900 font-medium">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="In Transit">In Transit</SelectItem>
-                    <SelectItem value="Delivered">Delivered</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  <SelectContent className="bg-white border-neutral-300 z-[100]">
+                    <SelectItem value="In Transit" className="text-neutral-900">In Transit</SelectItem>
+                    <SelectItem value="Delivered" className="text-neutral-900">Delivered</SelectItem>
+                    <SelectItem value="Cancelled" className="text-neutral-900">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

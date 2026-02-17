@@ -16,7 +16,7 @@ export const POLineItemRow = ({ item, index, onUpdate, onRemove, canRemove }) =>
           value={item.vendor}
           onChange={(e) => onUpdate(index, 'vendor', e.target.value)}
           placeholder="Vendor"
-          className="h-8 text-xs bg-white text-neutral-900"
+          className="h-8 text-xs bg-white text-neutral-900 border-neutral-400"
           required
         />
       </td>
@@ -25,7 +25,7 @@ export const POLineItemRow = ({ item, index, onUpdate, onRemove, canRemove }) =>
           value={item.location}
           onChange={(e) => onUpdate(index, 'location', e.target.value)}
           placeholder="Location"
-          className="h-8 text-xs bg-white text-neutral-900"
+          className="h-8 text-xs bg-white text-neutral-900 border-neutral-400"
           required
         />
       </td>
@@ -34,7 +34,7 @@ export const POLineItemRow = ({ item, index, onUpdate, onRemove, canRemove }) =>
           value={item.brand}
           onChange={(e) => onUpdate(index, 'brand', e.target.value)}
           placeholder="Brand"
-          className="h-8 text-xs bg-white text-neutral-900"
+          className="h-8 text-xs bg-white text-neutral-900 border-neutral-400"
           required
         />
       </td>
@@ -43,7 +43,7 @@ export const POLineItemRow = ({ item, index, onUpdate, onRemove, canRemove }) =>
           value={item.model}
           onChange={(e) => onUpdate(index, 'model', e.target.value)}
           placeholder="Model"
-          className="h-8 text-xs bg-white text-neutral-900"
+          className="h-8 text-xs bg-white text-neutral-900 border-neutral-400"
           required
         />
       </td>
@@ -52,7 +52,7 @@ export const POLineItemRow = ({ item, index, onUpdate, onRemove, canRemove }) =>
           value={item.storage}
           onChange={(e) => onUpdate(index, 'storage', e.target.value)}
           placeholder="Storage"
-          className="h-8 text-xs bg-white text-neutral-900"
+          className="h-8 text-xs bg-white text-neutral-900 border-neutral-400"
         />
       </td>
       <td className="px-2 py-2">
@@ -61,7 +61,7 @@ export const POLineItemRow = ({ item, index, onUpdate, onRemove, canRemove }) =>
           value={item.qty}
           onChange={(e) => onUpdate(index, 'qty', e.target.value)}
           placeholder="Qty"
-          className="h-8 text-xs bg-white text-neutral-900 w-16"
+          className="h-8 text-xs bg-white text-neutral-900 w-16 border-neutral-400"
           min="1"
           required
         />
@@ -72,7 +72,7 @@ export const POLineItemRow = ({ item, index, onUpdate, onRemove, canRemove }) =>
           value={item.rate}
           onChange={(e) => onUpdate(index, 'rate', e.target.value)}
           placeholder="Rate"
-          className="h-8 text-xs bg-white text-neutral-900"
+          className="h-8 text-xs bg-white text-neutral-900 border-neutral-400"
           step="0.01"
           required
         />
