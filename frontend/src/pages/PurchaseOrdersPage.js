@@ -313,7 +313,7 @@ export const PurchaseOrdersPage = () => {
                       <td className="px-2 py-1.5 text-xs text-neutral-900">{item.rate ? `₹${item.rate.toFixed(2)}` : '-'}</td>
                       <td className="px-2 py-1.5 text-xs font-medium text-neutral-900">{item.po_value ? `₹${item.po_value.toFixed(2)}` : '-'}</td>
                       <td className="px-2 py-1.5 text-xs">{itemIndex === 0 ? getStatusBadge(po.approval_status) : ''}</td>
-                      <td className="px-2 py-1.5 text-xs space-x-1">
+                      <td className="px-2 py-1.5 text-xs flex items-center gap-1">
                         {itemIndex === 0 && (
                           <>
                             <Button size="sm" variant="ghost" onClick={() => setViewDialog({ open: true, po })} className="text-neutral-900 h-6 w-6 p-0" data-testid="view-po-button"><Eye className="w-3 h-3" /></Button>

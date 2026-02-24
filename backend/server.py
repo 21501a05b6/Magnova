@@ -17,6 +17,11 @@ import xlsxwriter
 import google.generativeai as genai
 import json
 import re
+import smtplib
+import random
+import string
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -41,6 +46,69 @@ security = HTTPBearer()
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
 ALGORITHM = "HS256"
 
+# OTP Configuration
+OTP_LENGTH = 6
+OTP_EXPIRY_MINUTES = 10
+
+# EmailJS REST API Configuration
+EMAILJS_SERVICE_ID = os.environ.get("EMAILJS_SERVICE_ID", "")
+EMAILJS_OTP_TEMPLATE_ID = os.environ.get("EMAILJS_OTP_TEMPLATE_ID", "")
+EMAILJS_WELCOME_TEMPLATE_ID = os.environ.get("EMAILJS_WELCOME_TEMPLATE_ID", "")
+EMAILJS_PUBLIC_KEY = os.environ.get("EMAILJS_PUBLIC_KEY", "")
+EMAILJS_PRIVATE_KEY = os.environ.get("EMAILJS_PRIVATE_KEY", "")
+
+def generate_otp():
+    """Generate a random 6-digit OTP"""
+    return ''.join(random.choices(string.digits, k=OTP_LENGTH))
+
+def _emailjs_send(template_id: str, template_params: dict) -> bool:
+    """Send an email via EmailJS REST API v2 (requires private key)."""
+    import requests as _requests
+    if not EMAILJS_SERVICE_ID or not EMAILJS_PUBLIC_KEY or not EMAILJS_PRIVATE_KEY:
+        logging.warning("EmailJS credentials not configured in backend .env")
+        return False
+    try:
+        payload = {
+            "service_id": EMAILJS_SERVICE_ID,
+            "template_id": template_id,
+            "user_id": EMAILJS_PUBLIC_KEY,
+            "accessToken": EMAILJS_PRIVATE_KEY,
+            "template_params": template_params
+        }
+        response = _requests.post(
+            "https://api.emailjs.com/api/v1.0/email/send",
+            json=payload,
+            timeout=15
+        )
+        if response.status_code == 200:
+            logging.info(f"EmailJS send OK for template {template_id}")
+            return True
+        else:
+            logging.error(f"EmailJS send failed [{response.status_code}]: {response.text}")
+            return False
+    except Exception as e:
+        logging.error(f"EmailJS request error: {str(e)}")
+        return False
+
+def send_otp_email(to_email: str, otp: str) -> bool:
+    """Send OTP verification email to user via EmailJS."""
+    from datetime import datetime, timezone, timedelta
+    expiry_time = (datetime.now(timezone.utc) + timedelta(minutes=OTP_EXPIRY_MINUTES)).strftime("%H:%M UTC")
+    template_params = {
+        "to_email": to_email,
+        "passcode": otp,
+        "time": expiry_time
+    }
+    return _emailjs_send(EMAILJS_OTP_TEMPLATE_ID, template_params)
+
+def send_welcome_email(to_email: str, name: str) -> bool:
+    """Send welcome email to newly registered user via EmailJS."""
+    template_params = {
+        "to_email": to_email,
+        "name": name
+    }
+    return _emailjs_send(EMAILJS_WELCOME_TEMPLATE_ID, template_params)
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
@@ -62,6 +130,8 @@ class User(BaseModel):
     name: str
     organization: str
     role: str
+    email_verified: bool = False
+    phone: Optional[str] = None
     created_at: datetime
 
 class UserCreate(BaseModel):
@@ -70,6 +140,18 @@ class UserCreate(BaseModel):
     name: str
     organization: str
     role: str
+    phone: Optional[str] = None
+
+class EmailVerificationRequest(BaseModel):
+    email: EmailStr
+
+class OTPVerifyRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+class OTPStoreRequest(BaseModel):
+    email: EmailStr
+    otp: str
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -392,6 +474,12 @@ async def create_audit_log(action: str, entity_type: str, entity_id: str, user: 
 @api_router.post("/auth/register", response_model=TokenResponse)
 async def register(user_data: UserCreate):
     from uuid import uuid4
+    
+    # Check if email is verified
+    verified_email = await db.verified_emails.find_one({"email": user_data.email})
+    if not verified_email:
+        raise HTTPException(status_code=400, detail="Email not verified. Please verify your email first.")
+    
     existing = await db.users.find_one({"email": user_data.email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -404,10 +492,26 @@ async def register(user_data: UserCreate):
         "name": user_data.name,
         "organization": user_data.organization,
         "role": user_data.role,
+        "phone": user_data.phone,
+        "email_verified": True,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
     await db.users.insert_one(user_doc)
+    
+    # Clean up verified email record
+    await db.verified_emails.delete_one({"email": user_data.email})
+    
+    # Send Welcome email via EmailJS
+    try:
+        welcome_sent = send_welcome_email(user_data.email, user_data.name)
+        if welcome_sent:
+            logging.info(f"Welcome email sent to {user_data.email}")
+        else:
+            logging.warning(f"Failed to send welcome email to {user_data.email}")
+    except Exception as e:
+        logging.error(f"Welcome email error for {user_data.email}: {str(e)}")
+    
     user = User(**{k: v for k, v in user_doc.items() if k != "password"})
     token = create_token(user_id, user_data.email)
     
@@ -428,6 +532,134 @@ async def login(credentials: UserLogin):
 @api_router.get("/auth/me", response_model=User)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@api_router.post("/auth/send-otp")
+async def send_otp(request: EmailVerificationRequest):
+    """Generate OTP, store it in DB, and send it to the user email via EmailJS."""
+    try:
+        # Email format validation
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, request.email):
+            raise HTTPException(status_code=400, detail="Invalid email format. Please enter a valid email address.")
+        
+        # Check if email already registered
+        existing_user = await db.users.find_one({"email": request.email})
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Generate OTP
+        otp = generate_otp()
+        
+        # Store OTP in database with expiry
+        otp_doc = {
+            "email": request.email,
+            "otp": otp,
+            "created_at": datetime.now(timezone.utc),
+            "expires_at": datetime.now(timezone.utc) + timedelta(minutes=OTP_EXPIRY_MINUTES)
+        }
+        
+        # Delete previous OTP if exists, then insert new
+        await db.email_otps.delete_one({"email": request.email})
+        await db.email_otps.insert_one(otp_doc)
+        
+        logging.info(f"OTP generated for {request.email}")
+        
+        # Send OTP via EmailJS REST API from the backend
+        email_sent = send_otp_email(request.email, otp)
+        if not email_sent:
+            # OTP is stored; warn but don't block — frontend can fallback or user retries
+            logging.warning(f"EmailJS send failed for {request.email}. OTP is stored in DB.")
+            return {
+                "message": "OTP generated but email delivery failed. Please check EmailJS configuration.",
+                "email": request.email,
+                "email_sent": False
+            }
+        
+        return {
+            "message": "OTP sent to your email successfully.",
+            "email": request.email,
+            "email_sent": True
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in send_otp: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error generating OTP")
+
+@api_router.post("/auth/store-otp")
+async def store_otp(request: OTPStoreRequest):
+    """Store pre-generated OTP from frontend (for EmailJS flow)"""
+    try:
+        # Email format validation
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, request.email):
+            raise HTTPException(status_code=400, detail="Invalid email format.")
+        
+        # Validate OTP format (6 digits)
+        if not request.otp or len(request.otp) != 6 or not request.otp.isdigit():
+            raise HTTPException(status_code=400, detail="Invalid OTP format. Must be 6 digits.")
+        
+        # Check if email already exists
+        existing_user = await db.users.find_one({"email": request.email})
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Store OTP in database with expiry
+        otp_doc = {
+            "email": request.email,
+            "otp": request.otp,
+            "created_at": datetime.now(timezone.utc),
+            "expires_at": datetime.now(timezone.utc) + timedelta(minutes=OTP_EXPIRY_MINUTES)
+        }
+        
+        # Delete previous OTP if exists
+        await db.email_otps.delete_one({"email": request.email})
+        await db.email_otps.insert_one(otp_doc)
+        
+        logging.info(f"OTP stored for {request.email}")
+        
+        return {"message": "OTP stored successfully for verification"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in store_otp: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error storing OTP")
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp(request: OTPVerifyRequest):
+    """Verify OTP for email"""
+    try:
+        # Find OTP in database
+        otp_record = await db.email_otps.find_one({"email": request.email})
+        
+        if not otp_record:
+            raise HTTPException(status_code=400, detail="OTP not found. Please request a new OTP.")
+        
+        # Check if OTP expired
+        if datetime.now(timezone.utc) > otp_record["expires_at"]:
+            await db.email_otps.delete_one({"email": request.email})
+            raise HTTPException(status_code=400, detail="OTP expired. Please request a new OTP.")
+        
+        # Verify OTP
+        if otp_record["otp"] != request.otp:
+            raise HTTPException(status_code=400, detail="Incorrect OTP. Please try again.")
+        
+        # Delete OTP after successful verification
+        await db.email_otps.delete_one({"email": request.email})
+        
+        # Store verified email in a temporary collection for registration
+        await db.verified_emails.update_one(
+            {"email": request.email},
+            {"$set": {"email": request.email, "verified_at": datetime.now(timezone.utc)}},
+            upsert=True
+        )
+        
+        return {"message": "OTP verified successfully", "email": request.email}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in verify_otp: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error verifying OTP")
 
 # Purchase Order Endpoints
 @api_router.post("/purchase-orders", response_model=PurchaseOrder)
