@@ -433,8 +433,8 @@ async def get_me(current_user: User = Depends(get_current_user)):
 @api_router.post("/purchase-orders", response_model=PurchaseOrder)
 async def create_purchase_order(po_data: POCreate, current_user: User = Depends(get_current_user)):
     from uuid import uuid4
-    if current_user.organization != "Magnova":
-        raise HTTPException(status_code=403, detail="Only Magnova can create POs")
+    if current_user.role.lower() not in ["admin", "purchase"]:
+        raise HTTPException(status_code=403, detail="Only Admins or Purchase Team can create POs")
     
     # Generate unique PO number and check for duplicates
     po_count = await db.purchase_orders.count_documents({}) + 1

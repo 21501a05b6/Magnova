@@ -177,7 +177,7 @@ export const PurchaseOrdersPage = () => {
     return <span className={`status-badge ${styles[status] || 'status-created'}`}>{status}</span>;
   };
 
-  const canCreatePO = user?.organization === 'Magnova' && (user?.role === 'Purchase' || user?.role === 'Admin');
+  const canCreatePO = user?.role?.toLowerCase() === 'purchase' || user?.role?.toLowerCase() === 'admin';
 
   return (
     <Layout pageTitle="Purchase Orders" pageDescription="Manage procurement requests">

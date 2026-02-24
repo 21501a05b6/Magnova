@@ -157,7 +157,7 @@ export const DashboardPage = () => {
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-2">
-                {user?.organization === 'Magnova' && (
+                {(user?.role?.toLowerCase() === 'purchase' || user?.role?.toLowerCase() === 'admin') && (
                   <Link
                     to="/purchase-orders"
                     data-testid="quick-action-po"
@@ -172,7 +172,7 @@ export const DashboardPage = () => {
                     </div>
                   </Link>
                 )}
-                {user?.organization === 'Nova' && (
+                {user?.organization?.toLowerCase() === 'nova' && (
                   <Link
                     to="/procurement"
                     data-testid="quick-action-procurement"
