@@ -37,6 +37,7 @@ export const DashboardPage = () => {
     if (!loading) {
       fetchStats();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTimestamps.dashboard]);
 
   const fetchStats = async () => {

@@ -50,7 +50,19 @@ export const InventoryPage = () => {
   }, [refreshTimestamps.inventory, refreshTimestamps.purchaseOrders]);
 
   useEffect(() => {
-    filterInventory();
+    let filtered = inventory;
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (item) =>
+          item.imei.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.device_model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.brand?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((item) => item.status === statusFilter);
+    }
+    setFilteredInventory(filtered);
   }, [inventory, searchTerm, statusFilter]);
 
   const fetchInventory = async () => {
@@ -312,6 +324,7 @@ export const InventoryPage = () => {
       })),
     ]);
     return { locations, total: total[0] };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredInventory]);
 
   const buildRows = (modelEntry) => {
