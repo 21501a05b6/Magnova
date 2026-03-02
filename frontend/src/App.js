@@ -10,6 +10,7 @@ import { PurchaseOrdersPage } from './pages/PurchaseOrdersPage';
 import { ProcurementPage } from './pages/ProcurementPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { InventoryPage } from './pages/InventoryPage';
+import { MagnovaInventoryPage } from './pages/MagnovaInventoryPage';
 import { LogisticsPage } from './pages/LogisticsPage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { SalesOrdersPage } from './pages/SalesOrdersPage';
@@ -98,6 +99,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <InventoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/magnova-inventory"
+            element={
+              <ProtectedRoute>
+                <MagnovaInventoryPage />
               </ProtectedRoute>
             }
           />

@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDataRefresh } from '../context/DataRefreshContext';
 import { Navigate } from 'react-router-dom';
 
-const NOVA_OUTWARD_LOCATIONS = ['Vijayawada', 'Hyderabad', 'Chennai', 'Bengaluru'];
+const MAGNOVA_OUTWARD_LOCATIONS = ['Vijayawada', 'Hyderabad', 'Chennai', 'Bengaluru'];
 
 const normalizeLocation = (location) => {
   const raw = (location || 'Unknown').toString().trim();
@@ -42,7 +42,7 @@ const normalizeLocation = (location) => {
   return { key: raw.toLowerCase(), label: raw };
 };
 
-export const InventoryPage = () => {
+export const MagnovaInventoryPage = () => {
   const [inventory, setInventory] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [locations, setLocations] = useState([]);
@@ -50,8 +50,7 @@ export const InventoryPage = () => {
   const [imeiLookup, setImeiLookup] = useState(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
-    novaInward: true,
-    novaOutward: true,
+    magnovaOutward: true,
   });
   const { user } = useAuth();
   const { 
@@ -170,7 +169,7 @@ export const InventoryPage = () => {
         imei: scanData.imei,
         action: scanData.action,
         location: scanData.location,
-        organization: 'Nova',
+        organization: 'Magnova',
         vendor: scanData.vendor,
         brand: scanData.brand,
         model: scanData.model,
@@ -228,30 +227,19 @@ export const InventoryPage = () => {
 
   const outwardLocationMap = useMemo(() => {
     const map = new Map();
-    NOVA_OUTWARD_LOCATIONS.forEach((location) => {
+    MAGNOVA_OUTWARD_LOCATIONS.forEach((location) => {
       const { key, label } = normalizeLocation(location);
       map.set(key, `Magnova - ${label}`);
     });
     return map;
   }, []);
 
-  // Group inventory by organization and status
-  const groupedInventory = useMemo(() => {
-    const groups = {
-      novaInward: [],
-      novaOutward: [],
-    };
-
-    inventory.forEach(item => {
+  // Filter only Magnova Outward inventory
+  const magnovaOutwardInventory = useMemo(() => {
+    return inventory.filter(item => {
       const status = item.status || '';
-      if (status.includes('Inward Nova')) {
-        groups.novaInward.push(item);
-      } else if (status.includes('Outward Nova')) {
-        groups.novaOutward.push(item);
-      }
+      return status.includes('Outward Magnova');
     });
-
-    return groups;
   }, [inventory]);
 
   // Group items by location within each section
@@ -267,7 +255,7 @@ export const InventoryPage = () => {
     return locationMap;
   };
 
-  const renderInventoryTable = (items, includeWarehouse = false, options = {}) => {
+  const renderInventoryTable = (items, options = {}) => {
     if (items.length === 0) {
       if (!options.includeEmptyLocations) {
         return (
@@ -303,7 +291,7 @@ export const InventoryPage = () => {
           return (
             <div key={locationKey} className="border border-neutral-200 rounded-lg overflow-hidden">
               <div className="bg-gray-100 px-4 py-2 font-semibold text-neutral-800 text-sm">
-                {includeWarehouse ? `Ware House: ${locationLabel}` : locationLabel}
+                Ware House: {locationLabel}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm border-collapse">
@@ -359,8 +347,8 @@ export const InventoryPage = () => {
   }
 
   return (
-    <Layout pageTitle="IMEI Inventory" pageDescription="Track device inventory with IMEI-level visibility">
-      <div data-testid="inventory-page" className="space-y-6">
+    <Layout pageTitle="Magnova Inventory" pageDescription="Track Magnova device inventory with IMEI-level visibility">
+      <div data-testid="magnova-inventory-page" className="space-y-6">
         {/* Inventory Notifications Banner */}
         {pendingInventory.length > 0 && (
           <div className="mb-6 bg-neutral-50 border border-neutral-300 rounded-lg p-4">
@@ -383,7 +371,7 @@ export const InventoryPage = () => {
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Add Inventory Item</DialogTitle>
+                <DialogTitle>Add Magnova Inventory Item</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleScan} className="space-y-4">
                 <div>
@@ -436,9 +424,6 @@ export const InventoryPage = () => {
                       <SelectValue placeholder="Select action" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-neutral-300 z-[100]">
-                      <SelectItem value="inward_nova" className="text-neutral-900">Inward Nova</SelectItem>
-                      <SelectItem value="inward_magnova" className="text-neutral-900">Inward Magnova</SelectItem>
-                      <SelectItem value="outward_nova" className="text-neutral-900">Outward Nova</SelectItem>
                       <SelectItem value="outward_magnova" className="text-neutral-900">Outward Magnova</SelectItem>
                       <SelectItem value="dispatch" className="text-neutral-900">Dispatch</SelectItem>
                       <SelectItem value="available" className="text-neutral-900">Mark Available</SelectItem>
@@ -554,43 +539,26 @@ export const InventoryPage = () => {
           </Dialog>
         </div>
 
-        {/* Inventory - Nova Section */}
+        {/* Inventory - Magnova Section */}
         <div className="space-y-4">
-          <div className="text-2xl font-bold text-neutral-900">Inventory - Nova</div>
+          <div className="text-2xl font-bold text-neutral-900">Inventory - Magnova</div>
           
-          {/* Nova - Inward */}
+          {/* Magnova - Outward */}
           <div className="border border-neutral-200 rounded-lg overflow-hidden">
             <button
-              onClick={() => toggleSection('novaInward')}
-              className="w-full bg-gray-200 px-4 py-3 flex items-center justify-between hover:bg-gray-250 transition-colors"
-            >
-              <h3 className="font-semibold text-neutral-800 text-lg">Inward</h3>
-              {expandedSections.novaInward ? <ChevronUp /> : <ChevronDown />}
-            </button>
-            {expandedSections.novaInward && (
-              <div className="p-4">
-                {renderInventoryTable(groupedInventory.novaInward)}
-              </div>
-            )}
-          </div>
-
-          {/* Nova - Outward */}
-          <div className="border border-neutral-200 rounded-lg overflow-hidden">
-            <button
-              onClick={() => toggleSection('novaOutward')}
+              onClick={() => toggleSection('magnovaOutward')}
               className="w-full bg-gray-200 px-4 py-3 flex items-center justify-between hover:bg-gray-250 transition-colors"
             >
               <h3 className="font-semibold text-neutral-800 text-lg">Outward</h3>
-              {expandedSections.novaOutward ? <ChevronUp /> : <ChevronDown />}
+              {expandedSections.magnovaOutward ? <ChevronUp /> : <ChevronDown />}
             </button>
-            {expandedSections.novaOutward && (
+            {expandedSections.magnovaOutward && (
               <div className="p-4">
                 {renderInventoryTable(
-                  groupedInventory.novaOutward.filter(item => {
+                  magnovaOutwardInventory.filter(item => {
                     const { key } = normalizeLocation(item.current_location || 'Unknown');
                     return outwardLocationMap.has(key);
                   }),
-                  false,
                   {
                     orderedLocationKeys: Array.from(outwardLocationMap.keys()),
                     locationLabelMap: outwardLocationMap,
