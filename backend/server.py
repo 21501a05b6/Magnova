@@ -607,7 +607,7 @@ async def register(user_data: UserCreate):
 
           <div style="background:#f0fdf4; border-left:4px solid #22c55e; padding:12px 16px;
                       border-radius:4px; margin-bottom:20px; font-size:13px; color:#166534;">
-            ✅ Your account is active. Login at <strong>http://localhost:3000/login</strong>
+            ✅ Your account is active. Login at <strong>https://magnova-phi.vercel.app/login</strong>
           </div>
 
           <div style="background:#fef2f2; border-left:4px solid #ef4444; padding:12px 16px;
