@@ -428,27 +428,42 @@ import functools
 
 def _send_smtp_sync(to_email: str, subject: str, html_body: str):
     """Blocking SMTP send – called via run_in_executor so it won't block FastAPI."""
+    import socket
     gmail_sender = os.environ.get("GMAIL_SENDER", "")
     gmail_pass   = os.environ.get("GMAILPASS", "")
     if not gmail_sender or not gmail_pass:
         logging.error("SMTP: GMAIL_SENDER or GMAILPASS env var is not set.")
         return False
+    
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"]    = gmail_sender
+    msg["To"]      = to_email
+    msg.attach(MIMEText(html_body, "html"))
+
+    # Helper to perform the actual sending logic
+    def perform_send(server):
+        server.login(gmail_sender, gmail_pass)
+        server.sendmail(gmail_sender, to_email, msg.as_string())
+
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"]    = gmail_sender
-        msg["To"]      = to_email
-        msg.attach(MIMEText(html_body, "html"))
-        # Force IPv4 resolution to prevent Railway network unreachable error
-        # UPDATE: Removing source_address constraint to fix [Errno -9] Address family not supported
+        # Strategy 1: SMTP_SSL on port 465 (Implicit SSL)
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(gmail_sender, gmail_pass)
-            server.sendmail(gmail_sender, to_email, msg.as_string())
-        logging.info(f"SMTP email sent to {to_email} | subject: {subject}")
+            perform_send(server)
+        logging.info(f"SMTP email sent to {to_email} | subject: {subject} (via SSL/465)")
         return True
-    except Exception as e:
-        logging.error(f"SMTP send error to {to_email}: {e}")
-        return False
+    except Exception as e1:
+        logging.warning(f"SMTP SSL/465 failed: {e1}. Retrying via TLS/587...")
+        try:
+            # Strategy 2: SMTP on port 587 (Connect -> STARTTLS)
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                perform_send(server)
+            logging.info(f"SMTP email sent to {to_email} | subject: {subject} (via TLS/587)")
+            return True
+        except Exception as e2:
+            logging.error(f"SMTP send error to {to_email}: {e2}")
+            return False
 
 async def send_smtp_email(to_email: str, subject: str, html_body: str) -> bool:
     """Async wrapper – runs blocking SMTP send in a thread pool executor."""
@@ -878,14 +893,6 @@ async def resolve_gap(procurement_id: str, resolution: GapResolution, current_us
                 deadline_ist  = (datetime.now(timezone.utc) + timedelta(hours=48, minutes=330))  # +5:30 IST
                 deadline_str  = deadline_ist.strftime("%d %b %Y, %I:%M %p IST")
                 
-                gmail_sender  = os.environ.get("GMAIL_SENDER", "")
-                gmail_pass    = os.environ.get("GMAILPASS", "")
-                
-                msg = MIMEMultipart("alternative")
-                msg["Subject"] = f"⚠️ Action Required: Resolve Procurement Gap within 48 Hours – {proc['po_number']}"
-                msg["From"]    = gmail_sender
-                msg["To"]      = creator_email
-
                 html_body = f"""
                 <html>
                 <body style="font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
@@ -954,13 +961,12 @@ async def resolve_gap(procurement_id: str, resolution: GapResolution, current_us
                 </html>
                 """
 
-                msg.attach(MIMEText(html_body, "html"))
-
-                # Force IPv4 resolution to prevent Railway network unreachable error
-                # UPDATE: Removing source_address constraint to fix [Errno -9] Address family not supported
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                    server.login(gmail_sender, gmail_pass)
-                    server.sendmail(gmail_sender, creator_email, msg.as_string())
+                # Send using robust async wrapper
+                await send_smtp_email(
+                    creator_email, 
+                    f"⚠️ Action Required: Resolve Procurement Gap within 48 Hours – {proc['po_number']}", 
+                    html_body
+                )
 
                 logging.info(f"Gap-reverse email sent to {creator_email} for PO {proc['po_number']}")
             else:
