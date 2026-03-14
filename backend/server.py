@@ -114,6 +114,16 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: User
 
+class AdminApprovalModel(BaseModel):
+    user_id: str
+    email: str
+    name: str
+    organization: str
+    role: str
+    phone: Optional[str] = None
+    status: str
+    created_at: str
+
 class POLineItem(BaseModel):
     sl_no: int
     vendor: str
@@ -573,12 +583,7 @@ async def register(user_data: UserCreate):
     from uuid import uuid4
     existing = await db.users.find_one({"email": user_data.email})
     if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    # Check email is verified via OTP
-    otp_record = otp_store.get(user_data.email)
-    if not otp_record or not otp_record.get("verified"):
-        raise HTTPException(status_code=400, detail="Email not verified. Please verify your email with OTP first.")
+        raise HTTPException(status_code=400, detail="already registered")
 
     user_id = str(uuid4())
     user_doc = {
@@ -592,13 +597,32 @@ async def register(user_data: UserCreate):
         "created_at": datetime.now(timezone.utc).isoformat()
     }
 
-    await db.users.insert_one(user_doc)
-    # Clean up OTP store
-    if user_data.email in otp_store:
-        del otp_store[user_data.email]
-
-    user  = User(**{k: v for k, v in user_doc.items() if k != "password"})
-    token = create_token(user_id, user_data.email)
+    if user_data.role == "Admin":
+        existing_approval = await db.admin_approvals.find_one({"email": user_data.email})
+        if existing_approval and existing_approval.get("status") == "Pending":
+            raise HTTPException(status_code=400, detail="waiting_for_admin")
+        
+        admins = await db.users.find({"role": "Admin"}).to_list(100)
+        if admins:
+            approval_doc = user_doc.copy()
+            approval_doc["status"] = "Pending"
+            await db.admin_approvals.insert_one(approval_doc)
+            
+            for admin in admins:
+                html = f"""
+                <html>
+                <body style="font-family: Arial, sans-serif; background: #f5f5f5; padding: 24px;">
+                  <div style="max-width:540px; margin:0 auto; background:#fff; border-radius:10px; padding:32px;">
+                    <h3>Admin Approval Required</h3>
+                    <p>User <strong>{user_data.name}</strong> ({user_data.email}) has requested an Admin role.</p>
+                    <p>Please log in at <a href="https://magnova-phi.vercel.app/users">https://magnova-phi.vercel.app/users</a> to approve or reject this request.</p>
+                  </div>
+                </body>
+                </html>
+                """
+                await send_smtp_email(admin["email"], "New Admin Registration Request", html)
+            
+            raise HTTPException(status_code=400, detail="waiting_for_admin")
 
     # ── Send welcome email via SMTP ─────────────────────────────────────────
     welcome_html = f"""
@@ -655,11 +679,20 @@ async def register(user_data: UserCreate):
     </body>
     </html>
     """
-    await send_smtp_email(user_data.email, f"Welcome to Magnova, {user_data.name}!", welcome_html)
-    # ────────────────────────────────────────────────────────────────────────
+    
+    # Send email synchronously in async context via executor (send_smtp_email does this)
+    success = await send_smtp_email(user_data.email, f"Welcome to Magnova, {user_data.name}!", welcome_html)
+    
+    if not success:
+        raise HTTPException(status_code=400, detail="wrong email try again message")
+
+    # If email was successfully sent, insert user into DB
+    await db.users.insert_one(user_doc)
+
+    user  = User(**{k: v for k, v in user_doc.items() if k != "password"})
+    token = create_token(user_id, user_data.email)
 
     return TokenResponse(access_token=token, user=user)
-
 
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
@@ -676,6 +709,66 @@ async def login(credentials: UserLogin):
 @api_router.get("/auth/me", response_model=User)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@api_router.get("/auth/admin-approvals", response_model=List[AdminApprovalModel])
+async def get_admin_approvals(current_user: User = Depends(get_current_user)):
+    if current_user.role != "Admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    approvals = await db.admin_approvals.find({"status": "Pending"}, {"_id": 0}).to_list(100)
+    return approvals
+
+@api_router.post("/auth/admin-approvals/{user_id}/approve")
+async def approve_admin(user_id: str, action_data: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "Admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    action = action_data.get("action")
+    approval = await db.admin_approvals.find_one({"user_id": user_id})
+    if not approval:
+        raise HTTPException(status_code=404, detail="Approval not found")
+        
+    if action == "approve":
+        user_doc = approval.copy()
+        user_doc.pop("status", None)
+        user_doc.pop("_id", None)
+        
+        # Check if email is already in users (in case they got approved previously or registered another role)
+        existing = await db.users.find_one({"email": user_doc["email"]})
+        if not existing:
+            await db.users.insert_one(user_doc)
+        
+        await db.admin_approvals.update_one({"user_id": user_id}, {"$set": {"status": "Approved"}})
+        
+        welcome_html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; background: #f5f5f5; padding: 24px;">
+          <div style="max-width:540px; margin:0 auto; background:#fff; border-radius:10px; padding:32px;">
+            <h3>Welcome, {user_doc['name']}! 🎉</h3>
+            <p>Your Admin account has been approved by the system administration.</p>
+            <p>You can now login at <strong>https://magnova-phi.vercel.app/login</strong></p>
+          </div>
+        </body>
+        </html>
+        """
+        await send_smtp_email(user_doc["email"], "Admin Account Approved", welcome_html)
+        return {"message": "Approved successfully"}
+        
+    elif action == "reject":
+        await db.admin_approvals.update_one({"user_id": user_id}, {"$set": {"status": "Rejected"}})
+        reject_html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; background: #f5f5f5; padding: 24px;">
+          <div style="max-width:540px; margin:0 auto; background:#fff; border-radius:10px; padding:32px;">
+            <h3>Account Update</h3>
+            <p>Your request for an Admin account has been declined by the system administration.</p>
+          </div>
+        </body>
+        </html>
+        """
+        await send_smtp_email(approval["email"], "Admin Account Request Update", reject_html)
+        return {"message": "Rejected successfully"}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
 
 # Purchase Order Endpoints
 @api_router.post("/purchase-orders", response_model=PurchaseOrder)

@@ -61,7 +61,7 @@ export const Sidebar = () => {
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['Admin', 'Purchase', 'Manager', 'InternalPayments', 'ExternalPayments', 'Logistics', 'Inventory', 'Approver', 'Accounts', 'Stores', 'Sales'] },
     { path: '/purchase-orders', icon: ShoppingCart, label: 'Purchase Orders', roles: ['Admin', 'Purchase', 'Manager'] },
-    { path: '/manager', icon: Users, label: 'Approvals', roles: ['Admin', 'Manager'] },
+    { path: '/manager', icon: Users, label: 'Order Approvals', roles: ['Admin', 'Manager'] },
     { path: '/payments', icon: CreditCard, label: 'Internal Payments', roles: ['Admin', 'InternalPayments'] },
     { path: '/external-payments', icon: CreditCard, label: 'External Payments', roles: ['Admin', 'ExternalPayments'] },
     { path: '/procurement', icon: Package, label: 'Procurement', roles: ['Admin', 'Purchase'] },
@@ -69,7 +69,7 @@ export const Sidebar = () => {
     { path: '/inventory-nova', icon: Boxes, label: 'Inventory - Nova', roles: ['Admin', 'Inventory'] },
     { path: '/inventory-magnova', icon: Boxes, label: 'Inventory - Magnova', roles: ['Admin', 'Inventory'] },
     { path: '/reports', icon: BarChart3, label: 'Reports', roles: ['Admin', 'Purchase', 'Manager', 'InternalPayments', 'ExternalPayments', 'Logistics', 'Inventory'] },
-    { path: '/users', icon: Users, label: 'Users', roles: ['Admin'] },
+    { path: '/users', icon: Users, label: 'Admin Approvals', roles: ['Admin'] },
   ];
 
   const filteredMenu = menuItems.filter((item) =>
