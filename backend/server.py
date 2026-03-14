@@ -440,7 +440,8 @@ def _send_smtp_sync(to_email: str, subject: str, html_body: str):
         msg["To"]      = to_email
         msg.attach(MIMEText(html_body, "html"))
         # Force IPv4 resolution to prevent Railway network unreachable error
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, source_address=('0.0.0.0', 0)) as server:
+        # UPDATE: Removing source_address constraint to fix [Errno -9] Address family not supported
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(gmail_sender, gmail_pass)
             server.sendmail(gmail_sender, to_email, msg.as_string())
         logging.info(f"SMTP email sent to {to_email} | subject: {subject}")
@@ -956,7 +957,8 @@ async def resolve_gap(procurement_id: str, resolution: GapResolution, current_us
                 msg.attach(MIMEText(html_body, "html"))
 
                 # Force IPv4 resolution to prevent Railway network unreachable error
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465, source_address=('0.0.0.0', 0)) as server:
+                # UPDATE: Removing source_address constraint to fix [Errno -9] Address family not supported
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                     server.login(gmail_sender, gmail_pass)
                     server.sendmail(gmail_sender, creator_email, msg.as_string())
 
