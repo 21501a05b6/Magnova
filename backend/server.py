@@ -680,14 +680,14 @@ async def register(user_data: UserCreate):
     </html>
     """
     
-    # Send email synchronously in async context via executor (send_smtp_email does this)
-    success = await send_smtp_email(user_data.email, f"Welcome to Magnova, {user_data.name}!", welcome_html)
-    
-    if not success:
-        raise HTTPException(status_code=400, detail="wrong email try again message")
-
-    # If email was successfully sent, insert user into DB
+    # Save user to DB first — registration must not depend on email delivery
     await db.users.insert_one(user_doc)
+
+    # Send welcome email; failure is non-blocking (just logs a warning)
+    try:
+        await send_smtp_email(user_data.email, f"Welcome to Magnova, {user_data.name}!", welcome_html)
+    except Exception as email_err:
+        logging.warning(f"Welcome email to {user_data.email} failed (non-blocking): {email_err}")
 
     user  = User(**{k: v for k, v in user_doc.items() if k != "password"})
     token = create_token(user_id, user_data.email)
