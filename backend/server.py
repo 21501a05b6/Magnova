@@ -175,6 +175,7 @@ class ProcurementRecord(BaseModel):
     vendor_name: str
     store_location: str
     imei: str
+    imei2: Optional[str] = None
     serial_number: Optional[str] = None
     device_model: str
     po_quantity: Optional[int] = 1
@@ -195,6 +196,7 @@ class ProcurementCreate(BaseModel):
     vendor_name: str
     store_location: str
     imei: Optional[str] = None
+    imei2: Optional[str] = None
     serial_number: Optional[str] = None
     device_model: str
     po_quantity: Optional[int] = 1
@@ -236,20 +238,25 @@ class InternalPaymentCreate(BaseModel):
 
 class ExternalPaymentCreate(BaseModel):
     po_number: str
-    payee_type: str  # 'vendor' or 'cc'
-    payee_name: str
-    payee_phone: Optional[str] = None  # Required when payee_type is 'cc'
-    account_number: str
-    ifsc_code: str
-    location: str
-    payment_mode: str
+    payee_type: str  # 'Vendor' or 'CC'
     amount: float
     utr_number: str
     payment_date: datetime
+    payment_mode: Optional[str] = "Bank Transfer"
+    
+    # Vendor specific
+    bank_name: Optional[str] = None
+    ifsc_code: Optional[str] = None
+    vendor_name: Optional[str] = None
+    
+    # CC specific
+    credit_card_number: Optional[str] = None
+    cc_name: Optional[str] = None
 
 class IMEIInventory(BaseModel):
     model_config = ConfigDict(extra="ignore")
     imei: str
+    imei2: Optional[str] = None
     procurement_id: Optional[str] = None
     device_model: Optional[str] = None
     brand: Optional[str] = None
@@ -271,13 +278,16 @@ class IMEIInventory(BaseModel):
 
 class IMEIScan(BaseModel):
     imei: str
+    imei2: Optional[str] = None
     action: str
     location: str
     organization: str
     vendor: Optional[str] = None
     brand: Optional[str] = None
     model: Optional[str] = None
+    storage: Optional[str] = None
     colour: Optional[str] = None
+    inward_date: Optional[datetime] = None
 
 class LogisticsShipment(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -1207,20 +1217,23 @@ async def create_external_payment(payment_data: ExternalPaymentCreate, current_u
             detail=f"External payments cannot exceed internal payment. Internal: ₹{total_internal}, Already paid externally: ₹{total_external}, Remaining: ₹{remaining}"
         )
     
+    payee_name = payment_data.vendor_name if payment_data.payee_type == 'Vendor' else payment_data.cc_name
+    account_number = payment_data.credit_card_number if payment_data.payee_type == 'CC' else None
+
     payment_doc = {
         "payment_id": str(uuid4()),
         "po_number": payment_data.po_number,
         "payment_type": "external",
         "procurement_id": None,
         "payee_type": payment_data.payee_type,
-        "payee_name": payment_data.payee_name,
-        "payee_phone": payment_data.payee_phone,
+        "payee_name": payee_name or "",
+        "payee_phone": None,
         "payee_account": None,
-        "payee_bank": None,
-        "account_number": payment_data.account_number,
+        "payee_bank": payment_data.bank_name,
+        "account_number": account_number,
         "ifsc_code": payment_data.ifsc_code,
-        "location": payment_data.location,
-        "payment_mode": payment_data.payment_mode,
+        "location": "N/A",  # Deprecated
+        "payment_mode": payment_data.payment_mode or "Bank Transfer",
         "amount": payment_data.amount,
         "transaction_ref": None,
         "utr_number": payment_data.utr_number,
@@ -1231,7 +1244,7 @@ async def create_external_payment(payment_data: ExternalPaymentCreate, current_u
     }
     
     await db.payments.insert_one(payment_doc)
-    await create_audit_log("CREATE", "ExternalPayment", payment_doc["payment_id"], current_user, {"amount": payment_data.amount, "payee": payment_data.payee_name})
+    await create_audit_log("CREATE", "ExternalPayment", payment_doc["payment_id"], current_user, {"amount": payment_data.amount, "payee": payee_name or ""})
     
     return Payment(**{k: v for k, v in payment_doc.items() if k != "_id"})
 
@@ -1423,10 +1436,11 @@ async def scan_imei(scan_data: IMEIScan, current_user: User = Depends(get_curren
             # Create new inventory entry - allow IMEI even without procurement record
             new_inventory = {
                 "imei": scan_data.imei,
-                "device_model": procurement_record.get("device_model", "Unknown") if procurement_record else "Unknown",
+                "imei2": scan_data.imei2,
+                "device_model": procurement_record.get("device_model", "Unknown") if procurement_record else scan_data.model or "Unknown",
                 "status": "Procured" if procurement_record else "Available",
                 "vendor": (procurement_record.get("vendor_name") if procurement_record else None) or scan_data.vendor or "Unknown",
-                "organization": "Nova",
+                "organization": scan_data.organization or "Nova",
                 "current_location": scan_data.location or (procurement_record.get("store_location") if procurement_record else ""),
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -1440,10 +1454,15 @@ async def scan_imei(scan_data: IMEIScan, current_user: User = Depends(get_curren
             
             # Add brand, model, color from PO item data
             if po_item_data:
-                new_inventory["brand"] = po_item_data.get("brand")
-                new_inventory["model"] = po_item_data.get("model")
-                new_inventory["colour"] = po_item_data.get("colour")
-                new_inventory["storage"] = po_item_data.get("storage")
+                new_inventory["brand"] = scan_data.brand or po_item_data.get("brand")
+                new_inventory["model"] = scan_data.model or po_item_data.get("model")
+                new_inventory["colour"] = scan_data.colour or po_item_data.get("colour")
+                new_inventory["storage"] = scan_data.storage or po_item_data.get("storage")
+            else:
+                new_inventory["brand"] = scan_data.brand
+                new_inventory["model"] = scan_data.model
+                new_inventory["colour"] = scan_data.colour
+                new_inventory["storage"] = scan_data.storage
             
             await db.imei_inventory.insert_one(new_inventory)
             imei_record = new_inventory
@@ -1453,35 +1472,44 @@ async def scan_imei(scan_data: IMEIScan, current_user: User = Depends(get_curren
             "current_location": scan_data.location,
         }
         
+        # Add imei2 if provided
+        if scan_data.imei2:
+            update_data["imei2"] = scan_data.imei2
+            
         # Add vendor if provided
         if scan_data.vendor and scan_data.vendor.strip():
             update_data["vendor"] = scan_data.vendor
         
-        # Add brand, model, colour if provided
+        # Add brand, model, colour, storage if provided
         if scan_data.brand and scan_data.brand.strip():
             update_data["brand"] = scan_data.brand
         if scan_data.model and scan_data.model.strip():
             update_data["model"] = scan_data.model
         if scan_data.colour and scan_data.colour.strip():
             update_data["colour"] = scan_data.colour
+        if scan_data.storage and scan_data.storage.strip():
+            update_data["storage"] = scan_data.storage
+        
+        # Use custom inward date if provided, otherwise now
+        custom_date = scan_data.inward_date.isoformat() if scan_data.inward_date else datetime.now(timezone.utc).isoformat()
         
         # Set status based on action
         if scan_data.action == "inward_nova":
             update_data["status"] = "Inward Nova"
-            update_data["inward_nova_date"] = datetime.now(timezone.utc).isoformat()
+            update_data["inward_nova_date"] = custom_date
         elif scan_data.action == "inward_magnova":
             update_data["status"] = "Inward Magnova"
-            update_data["inward_magnova_date"] = datetime.now(timezone.utc).isoformat()
+            update_data["inward_magnova_date"] = custom_date
             update_data["organization"] = "Magnova"
         elif scan_data.action == "outward_nova":
             update_data["status"] = "Outward Nova"
-            update_data["outward_nova_date"] = datetime.now(timezone.utc).isoformat()
+            update_data["outward_nova_date"] = custom_date
         elif scan_data.action == "outward_magnova":
             update_data["status"] = "Outward Magnova"
-            update_data["outward_magnova_date"] = datetime.now(timezone.utc).isoformat()
+            update_data["outward_magnova_date"] = custom_date
         elif scan_data.action == "dispatch":
             update_data["status"] = "Dispatched"
-            update_data["dispatched_date"] = datetime.now(timezone.utc).isoformat()
+            update_data["dispatched_date"] = custom_date
         elif scan_data.action == "available":
             update_data["status"] = "Available"
         
@@ -1504,12 +1532,22 @@ async def scan_imei(scan_data: IMEIScan, current_user: User = Depends(get_curren
             "message": "IMEI scanned successfully", 
             "status": update_data.get("status", "Unknown")
         }
-    
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error scanning IMEI {scan_data.imei}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to scan IMEI: {str(e)}")
+        logger.error(f"Error scanning IMEI: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/inventory/bulk-scan")
+async def bulk_scan_imeis(scan_list: List[IMEIScan], current_user: User = Depends(get_current_user)):
+    results = []
+    for scan_data in scan_list:
+        try:
+            res = await scan_imei(scan_data, current_user)
+            results.append({"imei": scan_data.imei, "success": True, "message": res["message"]})
+        except HTTPException as e:
+            results.append({"imei": scan_data.imei, "success": False, "error": e.detail})
+        except Exception as e:
+            results.append({"imei": scan_data.imei, "success": False, "error": str(e)})
+    return results    
 
 @api_router.get("/inventory", response_model=List[IMEIInventory])
 async def get_inventory(status: Optional[str] = None, organization: Optional[str] = None, current_user: User = Depends(get_current_user)):

@@ -196,21 +196,10 @@ export const PurchaseOrdersPage = () => {
                   <DialogDescription className="text-neutral-600">Nova to Magnova PO - Add line items</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreate} className="space-y-6" data-testid="create-po-form">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                  <div className="grid grid-cols-1 gap-4 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
                     <div className="space-y-2">
                       <Label className="text-neutral-700 font-medium">P.O Date *</Label>
                       <Input type="date" value={poDate} onChange={(e) => setPoDate(e.target.value)} className="bg-white text-neutral-900 border-neutral-400" required data-testid="po-date-input" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-neutral-700 font-medium">Purchase Office *</Label>
-                      <Select value={purchaseOffice} onValueChange={setPurchaseOffice}>
-                        <SelectTrigger className="bg-white text-neutral-900 border-neutral-400" data-testid="purchase-office-select"><SelectValue /></SelectTrigger>
-                        <SelectContent className="bg-white border-neutral-300 z-[100]">
-                          <SelectItem value="Magnova Head Office" className="text-neutral-900">Magnova Head Office</SelectItem>
-                          <SelectItem value="Magnova Branch Office" className="text-neutral-900">Magnova Branch Office</SelectItem>
-                          <SelectItem value="Nova Enterprises" className="text-neutral-900">Nova Enterprises</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                   <div className="border border-neutral-200 rounded-lg overflow-hidden">
@@ -247,9 +236,6 @@ export const PurchaseOrdersPage = () => {
                       </table>
                     </div>
                   </div>
-                  <Button type="button" variant="outline" onClick={addLineItem} className="w-full border-gray-900 text-neutral-600 hover:bg-neutral-100">
-                    <Plus className="w-4 h-4 mr-2" />Add Another Item
-                  </Button>
                   <Button type="submit" className="w-full bg-gray-900 hover:bg-gray-800 text-white" data-testid="po-submit-button">Create Purchase Order</Button>
                 </form>
               </DialogContent>

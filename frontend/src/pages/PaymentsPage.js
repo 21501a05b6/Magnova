@@ -40,7 +40,7 @@ export const PaymentsPage = () => {
     addExternalPaymentNotification,
     allExternalPayments: allExternalNotifications,
     clearExternalPaymentNotification,
-    addLogisticsNotification,
+    addProcurementNotification,
   } = useDataRefresh();
 
   const isAdmin = user?.role === 'Admin';
@@ -64,16 +64,17 @@ export const PaymentsPage = () => {
   const [externalForm, setExternalForm] = useState({
     po_number: '',
     payee_type: '',
-    payee_name: '',
-    payee_phone: '',
-    account_number: '',
-    ifsc_code: '',
-    location: '',
-    payment_mode: '',
     amount: '',
     utr_number: '',
     payment_date: new Date().toISOString().split('T')[0],
+    bank_name: '',
+    ifsc_code: '',
+    vendor_name: '',
+    credit_card_number: '',
+    cc_name: '',
   });
+
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (hasAccess) {
@@ -154,54 +155,61 @@ export const PaymentsPage = () => {
 
   const handleCreateInternal = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     try {
       await api.post('/payments/internal', {
         ...internalForm,
         amount: parseFloat(internalForm.amount),
         payment_date: new Date(internalForm.payment_date).toISOString(),
       });
+      toast.success('Internal payment recorded successfully', {
+        description: `PO: ${internalForm.po_number} - Amount: ₹${internalForm.amount}`,
+      });
       clearInternalPaymentNotification(internalForm.po_number);
-      const po = pos.find(p => p.po_number === internalForm.po_number);
       addExternalPaymentNotification({
         po_number: internalForm.po_number,
-        internal_amount: parseFloat(internalForm.amount),
-        vendor: po?.items?.[0]?.vendor || '',
-        brand: po?.items?.[0]?.brand || '',
-        model: po?.items?.[0]?.model || '',
-        location: po?.items?.[0]?.location || '',
+        vendor: pos.find(p => p.po_number === internalForm.po_number)?.items?.[0]?.vendor || '',
       });
-      toast.success('Internal payment recorded');
       setDialogOpen(false);
       resetForms();
       refreshAfterPaymentChange();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to record internal payment');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleCreateExternal = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     try {
       await api.post('/payments/external', {
         ...externalForm,
         amount: parseFloat(externalForm.amount),
         payment_date: new Date(externalForm.payment_date).toISOString(),
       });
+      toast.success('External payment recorded successfully', {
+        description: `PO: ${externalForm.po_number} - Amount: ₹${externalForm.amount}`,
+      });
       clearExternalPaymentNotification(externalForm.po_number);
       const po = pos.find(p => p.po_number === externalForm.po_number);
-      addLogisticsNotification({
+      addProcurementNotification({
         po_number: externalForm.po_number,
-        vendor_name: externalForm.payee_name || po?.items?.[0]?.vendor || '',
+        vendor: externalForm.vendor_name || externalForm.cc_name || po?.items?.[0]?.vendor || '',
         brand: po?.items?.[0]?.brand || '',
         model: po?.items?.[0]?.model || '',
-        store_location: po?.items?.[0]?.location || '',
+        location: po?.items?.[0]?.location || '',
       });
-      toast.success('External payment recorded');
       setDialogOpen(false);
       resetForms();
       refreshAfterPaymentChange();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to record external payment');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -221,8 +229,8 @@ export const PaymentsPage = () => {
     setExternalForm(prev => ({
       ...prev,
       po_number: notification.po_number,
-      payee_name: notification.vendor || '',
-      location: notification.location || '',
+      payee_type: 'Vendor',
+      vendor_name: notification.vendor || '',
     }));
     handleExternalPOSelect(notification.po_number);
     setDialogOpen(true);
@@ -236,10 +244,12 @@ export const PaymentsPage = () => {
       payment_mode: '', amount: '', transaction_ref: '', payment_date: new Date().toISOString().split('T')[0],
     });
     setExternalForm({
-      po_number: '', payee_type: '', payee_name: '', payee_phone: '',
-      account_number: '', ifsc_code: '', location: '', payment_mode: '',
-      amount: '', utr_number: '', payment_date: new Date().toISOString().split('T')[0],
+      po_number: '', payee_type: '', amount: '', utr_number: '',
+      payment_date: new Date().toISOString().split('T')[0],
+      bank_name: '', ifsc_code: '', vendor_name: '',
+      credit_card_number: '', cc_name: '',
     });
+    setSubmitting(false);
   };
 
   const handleDelete = async (paymentId) => {
@@ -420,20 +430,50 @@ export const PaymentsPage = () => {
                       <div><Label>Transaction Ref</Label><Input value={internalForm.transaction_ref} onChange={e => setInternalForm({...internalForm, transaction_ref: e.target.value})} className="bg-white border-neutral-400" /></div>
                       <div><Label>Payment Date *</Label><Input type="date" value={internalForm.payment_date} onChange={e => setInternalForm({...internalForm, payment_date: e.target.value})} required className="bg-white border-neutral-400" /></div>
                     </div>
-                    <Button type="submit" className="w-full bg-gray-900 text-white">Record Internal Payment</Button>
+                    <Button type="submit" disabled={submitting} className="w-full bg-gray-900 text-white">
+                      {submitting ? 'Recording...' : 'Record Internal Payment'}
+                    </Button>
                   </form>
                 )}
                 {paymentType === 'external' && (
                   <form onSubmit={handleCreateExternal} className="space-y-4">
                     <div className="flex items-center justify-between"><h3 className="font-bold">External Payment</h3>{!(isInternalRoute || isExternalRoute) && <Button type="button" variant="ghost" size="sm" onClick={() => setPaymentType('')}>← Back</Button>}</div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><Label>PO Number *</Label><Select value={externalForm.po_number} onValueChange={handleExternalPOSelect} required><SelectTrigger className="bg-white border-neutral-400"><SelectValue placeholder="Select PO" /></SelectTrigger><SelectContent className="bg-white z-[100]">{pos.map(po => <SelectItem key={po.po_number} value={po.po_number}>{po.po_number}</SelectItem>)}</SelectContent></Select></div>
-                      <div><Label>Payee Name *</Label><Input value={externalForm.payee_name} onChange={e => setExternalForm({...externalForm, payee_name: e.target.value})} required className="bg-white border-neutral-400" /></div>
-                      <div><Label>Amount *</Label><Input type="number" value={externalForm.amount} onChange={e => setExternalForm({...externalForm, amount: e.target.value})} required className="bg-white border-neutral-400" /></div>
-                      <div><Label>UTR Number *</Label><Input value={externalForm.utr_number} onChange={e => setExternalForm({...externalForm, utr_number: e.target.value})} required className="bg-white border-neutral-400" /></div>
-                      <div><Label>Location *</Label><Input value={externalForm.location} onChange={e => setExternalForm({...externalForm, location: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                      <div><Label>PO Number *</Label><Select value={externalForm.po_number} onValueChange={handleExternalPOSelect} required><SelectTrigger className="bg-white border-neutral-400"><SelectValue placeholder="Select PO" /></SelectTrigger><SelectContent className="bg-white">{pos.map(po => <SelectItem key={po.po_number} value={po.po_number}>{po.po_number}</SelectItem>)}</SelectContent></Select></div>
+                      <div>
+                        <Label>Payee Type *</Label>
+                        <Select value={externalForm.payee_type} onValueChange={v => setExternalForm({...externalForm, payee_type: v})} required>
+                          <SelectTrigger className="bg-white border-neutral-400"><SelectValue placeholder="Select Type" /></SelectTrigger>
+                          <SelectContent className="bg-white">
+                            <SelectItem value="Vendor">Vendor</SelectItem>
+                            <SelectItem value="CC">CC</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {externalForm.payee_type === 'Vendor' && (
+                        <>
+                          <div><Label>Bank Name *</Label><Input value={externalForm.bank_name} onChange={e => setExternalForm({...externalForm, bank_name: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                          <div><Label>IFSC Code *</Label><Input value={externalForm.ifsc_code} onChange={e => setExternalForm({...externalForm, ifsc_code: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                          <div><Label>UTR Number *</Label><Input value={externalForm.utr_number} onChange={e => setExternalForm({...externalForm, utr_number: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                          <div><Label>Amount *</Label><Input type="number" value={externalForm.amount} onChange={e => setExternalForm({...externalForm, amount: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                          <div><Label>Vendor Name *</Label><Input value={externalForm.vendor_name} onChange={e => setExternalForm({...externalForm, vendor_name: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                        </>
+                      )}
+
+                      {externalForm.payee_type === 'CC' && (
+                        <>
+                          <div><Label>Amount *</Label><Input type="number" value={externalForm.amount} onChange={e => setExternalForm({...externalForm, amount: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                          <div><Label>Bank Name *</Label><Input value={externalForm.bank_name} onChange={e => setExternalForm({...externalForm, bank_name: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                          <div><Label>UTR Number *</Label><Input value={externalForm.utr_number} onChange={e => setExternalForm({...externalForm, utr_number: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                          <div><Label>Credit Card Number *</Label><Input value={externalForm.credit_card_number} onChange={e => setExternalForm({...externalForm, credit_card_number: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                          <div><Label>CC Name *</Label><Input value={externalForm.cc_name} onChange={e => setExternalForm({...externalForm, cc_name: e.target.value})} required className="bg-white border-neutral-400" /></div>
+                        </>
+                      )}
                     </div>
-                    <Button type="submit" className="w-full bg-neutral-800 text-white">Record External Payment</Button>
+                    <Button type="submit" disabled={submitting} className="w-full bg-neutral-800 text-white">
+                      {submitting ? 'Recording...' : 'Record External Payment'}
+                    </Button>
                   </form>
                 )}
             </DialogContent>

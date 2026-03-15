@@ -360,15 +360,12 @@ h6 {
         color: #171717 !important;
     }
 
-    /* Override any yellow/amber from sonner defaults */
-    [data-sonner-toast][data-type="info"],
-    [data-sonner-toast][data-type="success"],
-    [data-sonner-toast][data-type="warning"],
-    [data-sonner-toast][data-type="error"],
-    [data-sonner-toast][data-type="loading"] {
-        background-color: white !important;
-        border-color: white !important;
-        color: #171717 !important;
+    /* Allow sonner to use its own background colors for different types */
+    [data-sonner-toast][data-type="success"] {
+        border-color: #22c55e !important;
+    }
+    [data-sonner-toast][data-type="error"] {
+        border-color: #ef4444 !important;
     }
 
     /* Ensure toast text and all child elements are black */
