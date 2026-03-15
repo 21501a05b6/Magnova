@@ -161,22 +161,29 @@ export const LogisticsPage = () => {
     
     if (item) {
       // Calculate total purchase quantity from procurement records for this PO
+      // Match by PO number, model, and vendor (if provided in PO)
       const procurementForItem = procurements.filter(
         p => p.po_number === poNumber && 
-             p.vendor_name === item.vendor && 
+             (item.vendor ? p.vendor_name === item.vendor : true) && 
              p.device_model.includes(item.model)
       );
+      
       const totalPurchaseQty = procurementForItem.reduce((sum, p) => sum + (p.purchase_quantity || 0), 0) || item.qty || 0;
-      const shippedQty = getShippedQuantityForItem(poNumber, item.vendor, item.location, item.model);
+      
+      // Use procurement data for auto-populating if PO item is missing it
+      const finalVendor = item.vendor || procurementForItem[0]?.vendor_name || '';
+      const finalLocation = item.location || procurementForItem[0]?.store_location || '';
+      
+      const shippedQty = getShippedQuantityForItem(poNumber, finalVendor, finalLocation, item.model);
       const available = totalPurchaseQty - shippedQty;
       
       setFormData(prev => ({
         ...prev,
         po_number: poNumber,
-        from_location: item.location || '',
+        from_location: finalLocation,
         brand: item.brand || '',
         model: item.model || '',
-        vendor: item.vendor || '',
+        vendor: finalVendor,
         total_quantity: totalPurchaseQty.toString(),
       }));
       
@@ -302,12 +309,12 @@ export const LogisticsPage = () => {
       }
     }
     
-    // Pre-fill with procurement location
+    // Pre-fill with procurement data, handling both potential field name conventions
     setFormData(prev => ({
       ...prev,
       po_number: procurement.po_number,
-      from_location: procurement.store_location || '',
-      vendor: procurement.vendor_name || '',
+      from_location: procurement.store_location || procurement.location || '',
+      vendor: procurement.vendor_name || procurement.vendor || '',
       brand: procurement.brand || '',
       model: procurement.model || '',
     }));
@@ -441,7 +448,7 @@ export const LogisticsPage = () => {
                         <SelectTrigger className="bg-white border-neutral-400 text-neutral-900 font-medium h-9">
                           <SelectValue placeholder="Select PO" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
+                        <SelectContent className="bg-white border-neutral-300 max-h-60">
                           {pos.length === 0 ? (
                             <SelectItem value="none" disabled className="text-neutral-500">No POs available</SelectItem>
                           ) : (
@@ -463,7 +470,7 @@ export const LogisticsPage = () => {
                           <SelectTrigger className="bg-white border-neutral-400 text-neutral-900 font-medium h-9">
                             <SelectValue placeholder="Select item from PO" />
                           </SelectTrigger>
-                          <SelectContent className="bg-white border-neutral-300 z-[100] max-h-60">
+                          <SelectContent className="bg-white border-neutral-300 max-h-60">
                             {poItems.map((item, index) => (
                               <SelectItem key={index} value={index.toString()} className="text-neutral-900 border-b border-neutral-50 last:border-0 hover:bg-neutral-50">
                                 {item.vendor} - {item.location} - {item.brand} {item.model} (Qty: {item.qty})
@@ -497,35 +504,27 @@ export const LogisticsPage = () => {
                 </div>
 
                 {/* Auto-populated Fields - Only show when item is selected */}
-                {(selectedItemIndex !== '' || poItems.length === 1) && formData.brand && (
+                {(selectedItemIndex !== '' || poItems.length === 1) && (formData.vendor || formData.brand) && (
                   <>
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-5 gap-4">
                       <div>
                         <Label className="text-neutral-700">Vendor</Label>
-                        <Input
-                          value={formData.vendor}
-                          className="bg-neutral-100 text-neutral-900"
-                          readOnly
-                        />
+                        <Input value={formData.vendor} className="bg-neutral-100 text-neutral-900 h-9" readOnly />
                       </div>
                       <div>
                         <Label className="text-neutral-700">Brand</Label>
-                        <Input
-                          value={formData.brand}
-                          className="bg-neutral-100 text-neutral-900"
-                          readOnly
-                        />
+                        <Input value={formData.brand} className="bg-neutral-100 text-neutral-900 h-9" readOnly />
                       </div>
                       <div>
                         <Label className="text-neutral-700">Model</Label>
-                        <Input
-                          value={formData.model}
-                          className="bg-neutral-100 text-neutral-900"
-                          readOnly
-                        />
+                        <Input value={formData.model} className="bg-neutral-100 text-neutral-900 h-9" readOnly />
                       </div>
                       <div>
-                        <Label className="text-neutral-700">Pickup Quantity *</Label>
+                        <Label className="text-neutral-700">Pickup Location</Label>
+                        <Input value={formData.from_location} className="bg-neutral-100 text-neutral-900 h-9" readOnly />
+                      </div>
+                      <div>
+                        <Label className="text-neutral-700">Pickup Qty *</Label>
                         <Input
                           type="number"
                           value={formData.pickup_quantity}
@@ -540,17 +539,6 @@ export const LogisticsPage = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-neutral-700">Pickup Location *</Label>
-                        <Input
-                          value={formData.from_location}
-                          onChange={(e) => setFormData({ ...formData, from_location: e.target.value })}
-                          required
-                          className="bg-white text-neutral-900 border-neutral-400 h-9"
-                          placeholder="Enter pickup location"
-                          data-testid="pickup-location-input"
-                        />
-                      </div>
                       <div>
                         <Label className="text-neutral-700">To Location *</Label>
                         <Input
@@ -710,7 +698,7 @@ export const LogisticsPage = () => {
                   <SelectTrigger className="bg-white border-neutral-400 text-neutral-900 font-medium">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border-neutral-300 z-[100]">
+                  <SelectContent className="bg-white border-neutral-300">
                     <SelectItem value="In Transit" className="text-neutral-900">In Transit</SelectItem>
                     <SelectItem value="Delivered" className="text-neutral-900">Delivered</SelectItem>
                     <SelectItem value="Cancelled" className="text-neutral-900">Cancelled</SelectItem>

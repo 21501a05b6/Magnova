@@ -7,7 +7,7 @@ import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Scan, Search, Trash2, CheckCircle, AlertCircle, Bell, X, Package, FileText, MapPin, Smartphone, CheckCircle2, BarChart3, TrendingUp, Layers } from 'lucide-react';
+import { Scan, Search, Trash2, CheckCircle, AlertCircle, Bell, X, Package, FileText, MapPin, Smartphone, CheckCircle2, BarChart3, TrendingUp, Layers, Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDataRefresh } from '../context/DataRefreshContext';
 import { Navigate } from 'react-router-dom';
@@ -42,6 +42,15 @@ export const InventoryPage = ({
     clearInventoryNotification,
     addInvoiceNotification,
   } = useDataRefresh();
+  
+  const [pos, setPos] = useState([]);
+  const [poItems, setPOItems] = useState([]);
+  const [selectedPO, setSelectedPO] = useState(null);
+  const [selectedPOItemIndex, setSelectedPOItemIndex] = useState('');
+  const [inwardRows, setInwardRows] = useState([{ imei1: '', imei2: '' }]);
+  const [inwardDate, setInwardDate] = useState(new Date().toISOString().split('T')[0]);
+  const [quantity, setQuantity] = useState('1');
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const isAdmin = user?.role === 'Admin';
   const hasAccess = user?.role === 'Admin' || user?.role === 'Inventory';
   const [scanData, setScanData] = useState({
@@ -52,6 +61,8 @@ export const InventoryPage = ({
     brand: '',
     model: '',
     colour: '',
+    storage: '',
+    po_number: '',
   });
 
   useEffect(() => {
@@ -65,6 +76,7 @@ export const InventoryPage = ({
       filtered = filtered.filter(
         (item) =>
           item.imei.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (item.imei2 && item.imei2.toLowerCase().includes(searchTerm.toLowerCase())) ||
           item.device_model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.brand?.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -100,6 +112,7 @@ export const InventoryPage = ({
       });
       setLocations(Array.from(allLocations));
       setVendors(Array.from(allVendors));
+      setPos(response.data);
     } catch (error) {
       console.error('Error fetching PO data:', error);
     }
@@ -111,6 +124,7 @@ export const InventoryPage = ({
       filtered = filtered.filter(
         (item) =>
           item.imei.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (item.imei2 && item.imei2.toLowerCase().includes(searchTerm.toLowerCase())) ||
           item.device_model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.brand?.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -119,6 +133,164 @@ export const InventoryPage = ({
       filtered = filtered.filter((item) => item.status === statusFilter);
     }
     setFilteredInventory(filtered);
+  };
+
+  const handlePOSelect = (poNumber) => {
+    const po = pos.find(p => p.po_number === poNumber);
+    setSelectedPO(po);
+    setScanData(prev => ({ ...prev, po_number: poNumber }));
+    if (po && po.items && po.items.length > 0) {
+      setPOItems(po.items);
+      if (po.items.length === 1) {
+        handleItemSelect('0', po.items);
+      } else {
+        setSelectedPOItemIndex('');
+      }
+    } else {
+      setPOItems([]);
+      setSelectedPOItemIndex('');
+    }
+  };
+
+  const handleItemSelect = (index, items = poItems) => {
+    setSelectedPOItemIndex(index);
+    const item = items[parseInt(index)];
+    if (item) {
+      setScanData(prev => ({
+        ...prev,
+        vendor: item.vendor || '',
+        location: item.location || '',
+        brand: item.brand || '',
+        model: item.model || '',
+        storage: item.storage || '',
+        colour: item.colour || '',
+      }));
+      setQuantity(item.qty ? item.qty.toString() : '1');
+    }
+  };
+
+  const handleAddRow = () => {
+    setInwardRows([...inwardRows, { imei1: '', imei2: '' }]);
+  };
+
+  const handleRemoveRow = (index) => {
+    if (inwardRows.length > 1) {
+      setInwardRows(inwardRows.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleRowChange = (index, field, value) => {
+    const updated = [...inwardRows];
+    updated[index][field] = value;
+    setInwardRows(updated);
+  };
+
+  const downloadTemplate = () => {
+    const headers = ['imei1', 'imei2', 'inward_date'];
+    const csvContent = "data:text/csv;charset=utf-8," + headers.join(',') + "\n";
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "inventory_bulk_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target.result;
+        const rows = text.split('\n').filter(r => r.trim() !== '');
+        
+        // Skip header if it exists
+        const startIdx = rows[0].toLowerCase().includes('imei') ? 1 : 0;
+        const dataRows = rows.slice(startIdx);
+
+        const newRows = dataRows
+          .map(row => {
+            const cols = row.split(',');
+            if (cols.length >= 1 && cols[0].trim() !== '') {
+              return { imei1: cols[0].trim(), imei2: cols[1]?.trim() || '' };
+            }
+            return null;
+          })
+          .filter(row => row !== null);
+          
+        if (newRows.length > 0) {
+          setInwardRows(newRows);
+          toast.success(`Imported ${newRows.length} IMEIs from file`);
+        } else {
+          toast.error('No valid IMEIs found in file');
+        }
+      };
+      reader.readAsText(file);
+    }
+    // Reset input
+    e.target.value = '';
+  };
+
+  const handleBulkSubmit = async (e) => {
+    if (e) e.preventDefault();
+    
+    if (organization === 'Nova') {
+      if (!scanData.po_number || !scanData.action || !scanData.location) {
+        toast.error('Please fill required fields (PO, Action, Location)');
+        return;
+      }
+
+      setBulkSubmitting(true);
+      const payload = inwardRows
+        .filter(row => row.imei1.trim() !== '')
+        .map(row => ({
+          imei: row.imei1,
+          imei2: row.imei2 || null,
+          action: scanData.action,
+          location: scanData.location,
+          organization: 'Nova',
+          po_number: scanData.po_number,
+          vendor: scanData.vendor,
+          brand: scanData.brand,
+          model: scanData.model,
+          storage: scanData.storage,
+          colour: scanData.colour,
+          inward_date: inwardDate ? new Date(inwardDate).toISOString() : null
+        }));
+
+      if (payload.length === 0) {
+        toast.error('At least one IMEI is required');
+        setBulkSubmitting(false);
+        return;
+      }
+
+      try {
+        const response = await api.post('/inventory/bulk-scan', payload);
+        const successes = response.data.filter(r => r.success);
+        const failures = response.data.filter(r => !r.success);
+
+        if (successes.length > 0) {
+          toast.success(`Successfully processed ${successes.length} IMEIs`);
+        }
+        if (failures.length > 0) {
+          toast.error(`Failed to process ${failures.length} IMEIs. Check console for details.`);
+          console.error('Bulk upload failures:', failures);
+        }
+
+        if (failures.length === 0) {
+          setDialogOpen(false);
+          resetForm();
+          refreshAfterInventoryChange();
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.detail || 'Bulk upload failed');
+      } finally {
+        setBulkSubmitting(false);
+      }
+    } else {
+      handleScan(e);
+    }
   };
 
   // Lookup IMEI when user enters IMEI number
@@ -250,8 +422,12 @@ export const InventoryPage = ({
   };
 
   const resetForm = () => {
-    setScanData({ imei: '', action: '', location: '', vendor: '', brand: '', model: '', colour: '' });
+    setScanData({ imei: '', action: '', location: '', vendor: '', brand: '', model: '', colour: '', storage: '', po_number: '' });
     setImeiLookup(null);
+    setInwardRows([{ imei1: '', imei2: '' }]);
+    setSelectedPO(null);
+    setPOItems([]);
+    setSelectedPOItemIndex('');
   };
 
   const getStatusColor = (status) => {
@@ -588,249 +764,368 @@ export const InventoryPage = ({
             <DialogTrigger asChild>
               <Button data-testid="scan-imei-button" className="bg-gray-900 hover:bg-gray-800 text-white">
                 <Scan className="w-4 h-4 mr-2" />
-                Scan IMEI
+                {organization === 'Nova' ? 'Add Inventory' : 'Scan IMEI'}
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-white max-w-lg">
+            <DialogContent className={`bg-white ${organization === 'Nova' ? 'max-w-3xl' : 'max-w-lg'}`}>
               <DialogHeader>
-                <DialogTitle className="text-neutral-900">Scan IMEI</DialogTitle>
-                <DialogDescription className="text-neutral-600">Enter IMEI to auto-populate details and update status</DialogDescription>
+                <DialogTitle className="text-neutral-900">
+                  {organization === 'Nova' ? 'Record Inventory Entry' : 'Scan IMEI'}
+                </DialogTitle>
+                <DialogDescription className="text-neutral-600">
+                  {organization === 'Nova' ? 'Select PO and record device details with multiple IMEIs' : 'Enter IMEI to auto-populate details and update status'}
+                </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleScan} className="space-y-4" data-testid="scan-form">
-                {/* IMEI Input with Lookup */}
-                <div>
-                  <Label className="text-neutral-700">IMEI Number *</Label>
-                  <div className="relative">
-                    <Input
-                      value={scanData.imei}
-                      onChange={(e) => handleImeiChange(e.target.value)}
-                      required
-                      className="font-mono bg-white text-neutral-900 pr-10 border-neutral-400 h-9"
-                      data-testid="scan-imei-input"
-                      placeholder="Enter IMEI number"
-                    />
-                    {lookupLoading && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <div className="animate-spin h-4 w-4 border-2 border-neutral-900 border-t-transparent rounded-full"></div>
-                      </div>
-                    )}
-                    {!lookupLoading && imeiLookup && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        {imeiLookup.found ? (
-                          <CheckCircle className="h-4 w-4 text-neutral-600" />
-                        ) : (
-                          <AlertCircle className="h-4 w-4 text-neutral-800" />
-                        )}
+
+              {organization === 'Nova' ? (
+                <form onSubmit={handleBulkSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                    <div>
+                      <Label className="text-neutral-700 font-medium">PO Number *</Label>
+                      <Select value={scanData.po_number} onValueChange={handlePOSelect}>
+                        <SelectTrigger className="bg-white border-neutral-400 text-neutral-900">
+                          <SelectValue placeholder="Select PO" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-neutral-300">
+                           {pos.map(po => (
+                             <SelectItem key={po.po_number} value={po.po_number} className="text-neutral-900">
+                               {po.po_number} - {po.purchase_office}
+                             </SelectItem>
+                           ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-neutral-700 font-medium">Action *</Label>
+                      <Select value={scanData.action} onValueChange={(v) => setScanData({...scanData, action: v})}>
+                        <SelectTrigger className="bg-white border-neutral-400 text-neutral-900">
+                          <SelectValue placeholder="Select Action" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-neutral-300">
+                          <SelectItem value="inward_nova" className="text-neutral-900">Inward Nova</SelectItem>
+                          <SelectItem value="outward_nova" className="text-neutral-900">Outward Nova</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {poItems.length > 1 && (
+                      <div className="col-span-2">
+                        <Label className="text-neutral-700 font-medium">Select Line Item *</Label>
+                        <Select value={selectedPOItemIndex} onValueChange={handleItemSelect}>
+                          <SelectTrigger className="bg-white border-neutral-400 text-neutral-900">
+                            <SelectValue placeholder="Select item from PO" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-neutral-300">
+                            {poItems.map((item, idx) => (
+                              <SelectItem key={idx} value={idx.toString()} className="text-neutral-900">
+                                {item.vendor} - {item.brand} {item.model} ({item.storage || 'No Storage'})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
                   </div>
-                  
-                  {/* Lookup Result Info */}
-                  {imeiLookup && (
-                    <div className={`mt-2 p-3 rounded-lg text-sm ${
-                      imeiLookup.found 
-                        ? 'bg-neutral-50 border border-neutral-300' 
-                        : 'bg-neutral-100 border border-neutral-400'
-                    }`}>
-                      {imeiLookup.found ? (
-                        <div className="space-y-1">
-                          {imeiLookup.in_inventory && (
-                            <p className="text-teal-700">
-                              <span className="font-medium">In Inventory:</span> Status - {imeiLookup.status}
-                            </p>
-                          )}
-                          {imeiLookup.in_procurement && (
-                            <>
-                              <p className="text-neutral-800">
-                                <span className="font-medium">From Procurement:</span> {imeiLookup.brand} {imeiLookup.model}
-                              </p>
-                              <p className="text-neutral-600">
-                                <span className="font-medium">Vendor:</span> {imeiLookup.vendor} | 
-                                <span className="font-medium ml-2">PO:</span> {imeiLookup.po_number}
-                              </p>
-                              {imeiLookup.colour && (
-                                <p className="text-neutral-600">
-                                  <span className="font-medium">Colour:</span> {imeiLookup.colour}
-                                </p>
-                              )}
-                            </>
+
+                  <div className="grid grid-cols-5 gap-2">
+                    <div>
+                      <Label className="text-[10px] text-neutral-500 uppercase font-bold">Vendor</Label>
+                      <Input value={scanData.vendor} readOnly className="bg-neutral-100 h-8 text-xs border-neutral-200" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-neutral-500 uppercase font-bold">Brand</Label>
+                      <Input value={scanData.brand} readOnly className="bg-neutral-100 h-8 text-xs border-neutral-200" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-neutral-500 uppercase font-bold">Model</Label>
+                      <Input value={scanData.model} readOnly className="bg-neutral-100 h-8 text-xs border-neutral-200" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-neutral-500 uppercase font-bold">Storage</Label>
+                      <Input value={scanData.storage} readOnly className="bg-neutral-100 h-8 text-xs border-neutral-200" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-neutral-500 uppercase font-bold">Location</Label>
+                      <Input value={scanData.location} readOnly className="bg-neutral-100 h-8 text-xs border-neutral-200" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-neutral-700 font-medium">Inward Date *</Label>
+                      <Input 
+                        type="date" 
+                        value={inwardDate} 
+                        onChange={e => setInwardDate(e.target.value)} 
+                        className="bg-white border-neutral-400 h-9 text-neutral-900" 
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-neutral-700 font-medium">Colour</Label>
+                      <Input 
+                        value={scanData.colour} 
+                        onChange={e => setScanData({...scanData, colour: e.target.value})} 
+                        className="bg-white border-neutral-400 h-9 text-neutral-900" 
+                        placeholder="Enter machine color"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-neutral-700 font-medium">Quantity</Label>
+                      <Input value={quantity} readOnly className="bg-neutral-100 h-9 text-neutral-500" />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200 pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-neutral-900 font-bold flex items-center gap-2">
+                        <Smartphone className="w-4 h-4" />
+                        IMEI Numbers
+                      </Label>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={downloadTemplate}
+                          className="border-neutral-300 text-neutral-600 hover:bg-neutral-50 h-8"
+                        >
+                          <FileText className="w-4 h-4 mr-1" /> Template
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => document.getElementById('csv-upload').click()}
+                          className="border-neutral-300 text-neutral-600 hover:bg-neutral-50 h-8"
+                        >
+                          <TrendingUp className="w-4 h-4 mr-1" /> Upload CSV
+                        </Button>
+                        <input 
+                          id="csv-upload" 
+                          type="file" 
+                          accept=".csv" 
+                          className="hidden" 
+                          onChange={handleFileUpload} 
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          onClick={handleAddRow}
+                          className="bg-neutral-800 text-white h-8"
+                        >
+                          <Plus className="w-4 h-4 mr-1" /> Add Row
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      {inwardRows.map((row, idx) => (
+                        <div key={idx} className="flex gap-2 items-center bg-neutral-50 p-2 rounded border border-neutral-100">
+                          <div className="flex-1">
+                            <Input 
+                              placeholder={`IMEI 1`} 
+                              value={row.imei1} 
+                              onChange={e => handleRowChange(idx, 'imei1', e.target.value)} 
+                              className="font-mono text-sm bg-white border-neutral-400 h-8 text-neutral-900" 
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <Input 
+                              placeholder="IMEI 2 (Optional)" 
+                              value={row.imei2} 
+                              onChange={e => handleRowChange(idx, 'imei2', e.target.value)} 
+                              className="font-mono text-sm bg-white border-neutral-400 h-8 text-neutral-900" 
+                            />
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleRemoveRow(idx)}
+                            disabled={inwardRows.length === 1}
+                            className="h-8 w-8 p-0 text-neutral-400 hover:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-neutral-900 hover:bg-neutral-800 text-white mt-4 h-11" 
+                    disabled={bulkSubmitting}
+                  >
+                    {bulkSubmitting ? 'Processing Inventory...' : 'Record Inward Entry'}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleScan} className="space-y-4" data-testid="scan-form">
+                  {/* IMEI Input with Lookup */}
+                  <div>
+                    <Label className="text-neutral-700 font-medium">IMEI Number *</Label>
+                    <div className="relative">
+                      <Input
+                        value={scanData.imei}
+                        onChange={(e) => handleImeiChange(e.target.value)}
+                        required
+                        className="font-mono bg-white text-neutral-900 pr-10 border-neutral-400 h-9"
+                        data-testid="scan-imei-input"
+                        placeholder="Enter IMEI number"
+                      />
+                      {lookupLoading && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="animate-spin h-4 w-4 border-2 border-neutral-900 border-t-transparent rounded-full"></div>
+                        </div>
+                      )}
+                      {!lookupLoading && imeiLookup && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {imeiLookup.found ? (
+                            <CheckCircle className="h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <AlertCircle className="h-4 w-4 text-amber-600" />
                           )}
                         </div>
-                      ) : (
-                        <p className="text-neutral-800">
-                          <AlertCircle className="inline w-4 h-4 mr-1" />
-                          IMEI not found. Please add this IMEI through Procurement first.
-                        </p>
                       )}
                     </div>
+                    
+                    {/* Lookup Result Info */}
+                    {imeiLookup && (
+                      <div className={`mt-2 p-3 rounded-lg text-sm ${
+                        imeiLookup.found 
+                          ? 'bg-emerald-50 border border-emerald-100' 
+                          : 'bg-amber-50 border border-amber-100'
+                      }`}>
+                        {imeiLookup.found ? (
+                          <div className="space-y-1">
+                            {imeiLookup.in_inventory && (
+                              <p className="text-emerald-800 font-medium">
+                                <CheckCircle2 className="inline w-3 h-3 mr-1" />
+                                In Inventory: Status - {imeiLookup.status}
+                              </p>
+                            )}
+                            {imeiLookup.in_procurement && (
+                              <>
+                                <p className="text-neutral-800 font-medium">
+                                  {imeiLookup.brand} {imeiLookup.model}
+                                </p>
+                                <p className="text-neutral-600 text-xs text-secondary-foreground/70">
+                                  Vendor: {imeiLookup.vendor} • PO: {imeiLookup.po_number}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-amber-800 font-medium">
+                            <AlertCircle className="inline w-4 h-4 mr-1" />
+                            New IMEI detected. Details will be saved on scan.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Auto-populated fields Group */}
+                  {(scanData.brand || scanData.vendor) && (
+                    <div className="grid grid-cols-2 gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+                      <div>
+                        <Label className="text-[10px] text-neutral-500 uppercase font-bold">Brand / Model</Label>
+                        <div className="font-medium text-neutral-900 text-sm">
+                          {scanData.brand} {scanData.model}
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-neutral-500 uppercase font-bold">Vendor / Loc</Label>
+                        <div className="font-medium text-neutral-900 text-sm">
+                          {scanData.vendor} • {scanData.location}
+                        </div>
+                      </div>
+                    </div>
                   )}
-                </div>
 
-                {/* Auto-populated fields - Brand, Model, Colour */}
-                {imeiLookup?.found && (
-                  <div className="grid grid-cols-3 gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-                    <div>
-                      <Label className="text-neutral-500 text-xs">Brand</Label>
-                      <Input
-                        value={scanData.brand || '-'}
-                        readOnly
-                        className="font-medium bg-white text-neutral-900 h-9"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-neutral-500 text-xs">Model</Label>
-                      <Input
-                        value={scanData.model || '-'}
-                        readOnly
-                        className="font-medium bg-white text-neutral-900 h-9"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-neutral-500 text-xs">Colour</Label>
-                      <Input
-                        value={scanData.colour || '-'}
-                        readOnly
-                        className="font-medium bg-white text-neutral-900 h-9"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <Label className="text-neutral-700">Action *</Label>
-                  <Select value={scanData.action} onValueChange={(value) => setScanData({ ...scanData, action: value })} required>
-                    <SelectTrigger data-testid="scan-action-select" className="bg-white text-neutral-900 border-neutral-400 h-9">
-                      <SelectValue placeholder="Select action" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-neutral-300 z-[100]">
-                      <SelectItem value="inward_nova" className="text-neutral-900">Inward Nova</SelectItem>
-                      <SelectItem value="inward_magnova" className="text-neutral-900">Inward Magnova</SelectItem>
-                      <SelectItem value="outward_nova" className="text-neutral-900">Outward Nova</SelectItem>
-                      <SelectItem value="outward_magnova" className="text-neutral-900">Outward Magnova</SelectItem>
-                      <SelectItem value="dispatch" className="text-neutral-900">Dispatch</SelectItem>
-                      <SelectItem value="available" className="text-neutral-900">Mark Available</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label className="text-neutral-700">Brand</Label>
-                    <Input
-                      value={scanData.brand}
-                      onChange={(e) => setScanData({ ...scanData, brand: e.target.value })}
-                      className="bg-white text-neutral-900 border-neutral-400 h-9"
-                      placeholder="Enter brand"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-neutral-700">Model</Label>
-                    <Input
-                      value={scanData.model}
-                      onChange={(e) => setScanData({ ...scanData, model: e.target.value })}
-                      className="bg-white text-neutral-900 border-neutral-400 h-9"
-                      placeholder="Enter model"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-neutral-700">Colour</Label>
-                    <Input
-                      value={scanData.colour}
-                      onChange={(e) => setScanData({ ...scanData, colour: e.target.value })}
-                      className="bg-white text-neutral-900 border-neutral-400 h-9"
-                      placeholder="Enter colour"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-neutral-700">Vendor {imeiLookup?.found ? '(Auto-populated)' : '*'}</Label>
-                    <Select 
-                      value={scanData.vendor} 
-                      onValueChange={(value) => setScanData({ ...scanData, vendor: value })} 
-                      required={!imeiLookup?.found}
-                    >
-                      <SelectTrigger className={`text-neutral-900 border-neutral-400 h-9 ${imeiLookup?.found && scanData.vendor ? 'bg-neutral-100' : 'bg-white'}`}>
-                        <SelectValue placeholder="Select vendor" />
+                    <Label className="text-neutral-700 font-medium">Action *</Label>
+                    <Select value={scanData.action} onValueChange={(value) => setScanData({ ...scanData, action: value })} required>
+                      <SelectTrigger data-testid="scan-action-select" className="bg-white text-neutral-900 border-neutral-400 h-9">
+                        <SelectValue placeholder="Select action" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-neutral-300 z-[100]">
-                        {vendors.length > 0 ? (
-                          vendors.map((vendor) => (
-                            <SelectItem key={vendor} value={vendor} className="text-neutral-900">{vendor}</SelectItem>
-                          ))
-                        ) : (
-                          <>
-                            <SelectItem value="Croma" className="text-neutral-900">Croma</SelectItem>
-                            <SelectItem value="Reliance Digital" className="text-neutral-900">Reliance Digital</SelectItem>
-                            <SelectItem value="Vijay Sales" className="text-neutral-900">Vijay Sales</SelectItem>
-                            <SelectItem value="Amazon" className="text-neutral-900">Amazon</SelectItem>
-                            <SelectItem value="Flipkart" className="text-neutral-900">Flipkart</SelectItem>
-                          </>
-                        )}
+                        <SelectItem value="inward_nova" className="text-neutral-900">Inward Nova</SelectItem>
+                        <SelectItem value="inward_magnova" className="text-neutral-900">Inward Magnova</SelectItem>
+                        <SelectItem value="outward_nova" className="text-neutral-900">Outward Nova</SelectItem>
+                        <SelectItem value="outward_magnova" className="text-neutral-900">Outward Magnova</SelectItem>
+                        <SelectItem value="dispatch" className="text-neutral-900">Dispatch</SelectItem>
+                        <SelectItem value="available" className="text-neutral-900">Mark Available</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div>
-                    <Label className="text-neutral-700">Location {imeiLookup?.found ? '(Auto-populated)' : '*'}</Label>
-                    <Select 
-                      value={scanData.location} 
-                      onValueChange={(value) => setScanData({ ...scanData, location: value })} 
-                      required={!imeiLookup?.found}
-                    >
-                      <SelectTrigger className={`text-neutral-900 border-neutral-400 h-9 ${imeiLookup?.found && scanData.location ? 'bg-neutral-100' : 'bg-white'}`} data-testid="scan-location-select">
-                        <SelectValue placeholder="Select location" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-neutral-300 z-[100]">
-                        {locations.length > 0 ? (
-                          locations.map((loc) => (
-                            <SelectItem key={loc} value={loc} className="text-neutral-900">{loc}</SelectItem>
-                          ))
-                        ) : (
-                          <>
-                            <SelectItem value="Mumbai" className="text-neutral-900">Mumbai</SelectItem>
-                            <SelectItem value="Delhi" className="text-neutral-900">Delhi</SelectItem>
-                            <SelectItem value="Bangalore" className="text-neutral-900">Bangalore</SelectItem>
-                            <SelectItem value="Chennai" className="text-neutral-900">Chennai</SelectItem>
-                            <SelectItem value="Hyderabad" className="text-neutral-900">Hyderabad</SelectItem>
-                            <SelectItem value="Pune" className="text-neutral-900">Pune</SelectItem>
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                  {!imeiLookup?.found && (
+                    <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-neutral-700 font-medium">Brand</Label>
+                          <Input
+                            value={scanData.brand}
+                            onChange={(e) => setScanData({ ...scanData, brand: e.target.value })}
+                            className="bg-white text-neutral-900 border-neutral-400 h-9"
+                            placeholder="e.g. Apple"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-neutral-700 font-medium">Model</Label>
+                          <Input
+                            value={scanData.model}
+                            onChange={(e) => setScanData({ ...scanData, model: e.target.value })}
+                            className="bg-white text-neutral-900 border-neutral-400 h-9"
+                            placeholder="e.g. iPhone 15"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-neutral-700 font-medium">Vendor</Label>
+                          <Select 
+                            value={scanData.vendor} 
+                            onValueChange={(value) => setScanData({ ...scanData, vendor: value })} 
+                          >
+                            <SelectTrigger className="bg-white text-neutral-900 border-neutral-400 h-9">
+                              <SelectValue placeholder="Select vendor" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border-neutral-300">
+                              {vendors.map((v) => <SelectItem key={v} value={v} className="text-neutral-900">{v}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-neutral-700 font-medium">Location</Label>
+                          <Select 
+                            value={scanData.location} 
+                            onValueChange={(value) => setScanData({ ...scanData, location: value })} 
+                          >
+                            <SelectTrigger className="bg-white text-neutral-900 border-neutral-400 h-9">
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border-neutral-300">
+                              {locations.map((l) => <SelectItem key={l} value={l} className="text-neutral-900">{l}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white" 
-                  data-testid="submit-scan"
-                  disabled={
-                    !scanData.imei ||
-                    !scanData.action ||
-                    !scanData.location ||
-                    !scanData.vendor ||
-                    (!imeiLookup?.found && scanData.imei.length >= 10)
-                  }
-                >
-                  {imeiLookup?.found ? 'Scan & Update' : 'Add to Inventory & Update'}
-                </Button>
-                
-                {(!scanData.imei || !scanData.action || !scanData.location || !scanData.vendor) && (
-                  <p className="text-center text-sm text-neutral-500">
-                    Fill all required fields to continue
-                  </p>
-                )}
-                
-                {!imeiLookup?.found && scanData.imei.length >= 10 && (
-                  <p className="text-center text-sm text-neutral-700">
-                    IMEI must be added through Procurement first
-                  </p>
-                )}
-              </form>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white h-11" 
+                    disabled={!scanData.imei || !scanData.action || !scanData.location}
+                  >
+                    Update Inventory Status
+                  </Button>
+                </form>
+              )}
             </DialogContent>
-            </Dialog>
+          </Dialog>
         </div>
 
         {showDashboard && (
@@ -1301,7 +1596,9 @@ export const InventoryPage = ({
                               <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Storage</th>
                               <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Colour</th>
                               <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">QTY</th>
-                              <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">IMEI</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">IMEI 1</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">IMEI 2</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Inward Date</th>
                               {isAdmin && <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Actions</th>}
                             </tr>
                           </thead>
@@ -1321,6 +1618,11 @@ export const InventoryPage = ({
                                   <td className="px-3 py-2 text-xs text-neutral-600">{item.colour || '-'}</td>
                                   <td className="px-3 py-2 text-xs text-neutral-900">1</td>
                                   <td className="px-3 py-2 text-xs font-mono font-medium text-neutral-900">{item.imei}</td>
+                                  <td className="px-3 py-2 text-xs font-mono text-neutral-600">{item.imei2 || '-'}</td>
+                                  <td className="px-3 py-2 text-xs text-neutral-600">
+                                    {item.inward_nova_date ? new Date(item.inward_nova_date).toLocaleDateString() : 
+                                     item.inward_magnova_date ? new Date(item.inward_magnova_date).toLocaleDateString() : '-'}
+                                  </td>
                                   {isAdmin && (
                                     <td className="px-3 py-2 text-xs">
                                       <Button

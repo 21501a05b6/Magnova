@@ -34,7 +34,7 @@ export const ProcurementPage = () => {
     refreshAfterProcurementChange, 
     allProcurements: allNotifications,
     clearProcurementNotification,
-    addInternalPaymentNotification,
+    addLogisticsNotification,
   } = useDataRefresh();
 
   const isAdmin = user?.role === 'Admin';
@@ -124,10 +124,12 @@ export const ProcurementPage = () => {
         purchase_price: parseFloat(formData.purchase_price),
       };
       await api.post('/procurement', procurementData);
-      addInternalPaymentNotification({
-        po_number: formData.po_number, po_date: new Date().toISOString(),
-        vendor: formData.vendor_name, total_value: parseFloat(formData.purchase_price) * parseInt(formData.purchase_quantity),
-        total_qty: parseInt(formData.purchase_quantity), brand: formData.brand, model: formData.device_model,
+      addLogisticsNotification({
+        po_number: formData.po_number,
+        vendor_name: formData.vendor_name,
+        brand: formData.brand,
+        model: formData.device_model,
+        store_location: formData.store_location,
       });
       clearProcurementNotification(formData.po_number);
       toast.success('Procurement completed');
@@ -245,6 +247,7 @@ export const ProcurementPage = () => {
                   <div><Label>Vendor</Label><Input value={formData.vendor_name} readOnly className="bg-neutral-100" /></div>
                   <div><Label>Location</Label><Input value={formData.store_location} readOnly className="bg-neutral-100" /></div>
                   <div><Label>Model</Label><Input value={formData.device_model} readOnly className="bg-neutral-100" /></div>
+                  <div><Label>Color</Label><Input value={formData.colour} onChange={e => setFormData({...formData, colour: e.target.value})} className="bg-white border-neutral-400" /></div>
                   <div><Label>PO Qty</Label><Input value={formData.quantity} readOnly className="bg-neutral-100" /></div>
                   <div><Label>Purchase Qty *</Label><Input type="number" value={formData.purchase_quantity} onChange={e => setFormData({...formData, purchase_quantity: e.target.value})} required className="bg-white border-neutral-400" /></div>
                   <div><Label>Price *</Label><Input type="number" value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})} required className="bg-white border-neutral-400" /></div>

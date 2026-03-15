@@ -130,15 +130,18 @@ export const DataRefreshProvider = ({ children }) => {
       .filter(po => (po.approval_status === 'Approved' || po.status === 'Approved'))
       .filter(po => procurements.some(p => p.po_number === po.po_number))
       .filter(po => !shipments.some(ship => ship.po_number === po.po_number))
-      .map(po => ({
-        po_number: po.po_number,
-        brand: po.items?.[0]?.brand || '',
-        model: po.items?.[0]?.model || '',
-        vendor: po.items?.[0]?.vendor || '',
-        location: po.items?.[0]?.location || '',
-        isDerived: true,
-        type: 'logistics'
-      }));
+      .map(po => {
+        const matchingProc = procurements.find(p => p.po_number === po.po_number);
+        return {
+          po_number: po.po_number,
+          brand: po.items?.[0]?.brand || matchingProc?.brand || '',
+          model: po.items?.[0]?.model || matchingProc?.device_model?.split(' ').pop() || '',
+          vendor: po.items?.[0]?.vendor || matchingProc?.vendor_name || '',
+          location: po.items?.[0]?.location || matchingProc?.store_location || '',
+          isDerived: true,
+          type: 'logistics'
+        };
+      });
   }, [pos, procurements, shipments]);
 
   const allLogisticsNotifications = useMemo(() => {
