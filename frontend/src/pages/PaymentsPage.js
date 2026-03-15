@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Building2, Users, X, Bell, CreditCard, Banknote, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDataRefresh } from '../context/DataRefreshContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 export const PaymentsPage = () => {
   const [payments, setPayments] = useState([]);
@@ -23,6 +23,14 @@ export const PaymentsPage = () => {
   const [paymentSummary, setPaymentSummary] = useState(null);
   const [linkedPaymentsDialog, setLinkedPaymentsDialog] = useState({ open: false, poNumber: '', internalPayment: null });
   const { user } = useAuth();
+  const location = useLocation();
+  const isInternalRoute = location.pathname === '/payments';
+  const isExternalRoute = location.pathname === '/external-payments';
+  
+  useEffect(() => {
+    if (isInternalRoute) setPaymentType('internal');
+    if (isExternalRoute) setPaymentType('external');
+  }, [isInternalRoute, isExternalRoute]);
   
   const { 
     refreshTimestamps, 
@@ -36,8 +44,8 @@ export const PaymentsPage = () => {
   } = useDataRefresh();
 
   const isAdmin = user?.role === 'Admin';
-  const canDoInternal = user?.role === 'Admin' || user?.role === 'InternalPayments';
-  const canDoExternal = user?.role === 'Admin' || user?.role === 'ExternalPayments';
+  const canDoInternal = isInternalRoute && (isAdmin || user?.role === 'InternalPayments');
+  const canDoExternal = isExternalRoute && (isAdmin || user?.role === 'ExternalPayments');
   const hasAccess = isAdmin || canDoInternal || canDoExternal;
 
   // Internal Payment Form
@@ -221,7 +229,7 @@ export const PaymentsPage = () => {
   };
 
   const resetForms = () => {
-    setPaymentType('');
+    setPaymentType(isInternalRoute ? 'internal' : (isExternalRoute ? 'external' : ''));
     setPaymentSummary(null);
     setInternalForm({
       po_number: '', payee_name: 'Nova Enterprises', payee_account: '', payee_bank: '',
@@ -403,7 +411,7 @@ export const PaymentsPage = () => {
                 )}
                 {paymentType === 'internal' && (
                   <form onSubmit={handleCreateInternal} className="space-y-4">
-                    <div className="flex items-center justify-between"><h3 className="font-bold">Internal Payment</h3><Button type="button" variant="ghost" size="sm" onClick={() => setPaymentType('')}>← Back</Button></div>
+                    <div className="flex items-center justify-between"><h3 className="font-bold">Internal Payment</h3>{!(isInternalRoute || isExternalRoute) && <Button type="button" variant="ghost" size="sm" onClick={() => setPaymentType('')}>← Back</Button>}</div>
                     <div className="grid grid-cols-2 gap-4">
                       <div><Label>PO Number *</Label><Select value={internalForm.po_number} onValueChange={handleInternalPOSelect} required><SelectTrigger className="bg-white border-neutral-400"><SelectValue placeholder="Select PO" /></SelectTrigger><SelectContent className="bg-white z-[100]">{pos.map(po => <SelectItem key={po.po_number} value={po.po_number}>{po.po_number}</SelectItem>)}</SelectContent></Select></div>
                       <div><Label>Payee Name</Label><Input value={internalForm.payee_name} readOnly className="bg-neutral-100" /></div>
@@ -417,7 +425,7 @@ export const PaymentsPage = () => {
                 )}
                 {paymentType === 'external' && (
                   <form onSubmit={handleCreateExternal} className="space-y-4">
-                    <div className="flex items-center justify-between"><h3 className="font-bold">External Payment</h3><Button type="button" variant="ghost" size="sm" onClick={() => setPaymentType('')}>← Back</Button></div>
+                    <div className="flex items-center justify-between"><h3 className="font-bold">External Payment</h3>{!(isInternalRoute || isExternalRoute) && <Button type="button" variant="ghost" size="sm" onClick={() => setPaymentType('')}>← Back</Button>}</div>
                     <div className="grid grid-cols-2 gap-4">
                       <div><Label>PO Number *</Label><Select value={externalForm.po_number} onValueChange={handleExternalPOSelect} required><SelectTrigger className="bg-white border-neutral-400"><SelectValue placeholder="Select PO" /></SelectTrigger><SelectContent className="bg-white z-[100]">{pos.map(po => <SelectItem key={po.po_number} value={po.po_number}>{po.po_number}</SelectItem>)}</SelectContent></Select></div>
                       <div><Label>Payee Name *</Label><Input value={externalForm.payee_name} onChange={e => setExternalForm({...externalForm, payee_name: e.target.value})} required className="bg-white border-neutral-400" /></div>
